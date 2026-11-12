@@ -1,6 +1,7 @@
 # Next.js 与前端约束
 
 - 本工程使用当前安装版本的 Next.js；写代码前阅读 `node_modules/next/dist/docs/` 中相关指南，遵循本仓库生成的 Next.js agent rules。
+- 路由和 Server Component 默认保留预渲染与既有 URL 预取。不要仅为消除预渲染诊断、读取无语义要求的当前时间或生成随机值而添加 `connection()`、`io()`、请求时 API、动态配置或等效边界。内容需要在按 URL 预取阶段生成时使用 `prefetch()`；`connection()` 只用于确实需要等待真实请求的代码，`io()` 只用于有意将同步读取排除在静态壳之外。耗时指标使用 `performance.now()`；遵循 [Next.js 运行时性能规范](../../../../openspec/specs/nextjs-runtime-performance/spec.md)。
 - 使用 App Router，不新增 Pages Router。服务端默认优先；只有交互、浏览器 API 或客户端状态才使用 Client Component。
 - `@/*` 用于源码绝对导入，`@tests/*` 用于测试；避免深层相对路径。Server-only 代码保持服务端边界，禁止被客户端 bundle 引入。
 - 路由家族的 `components`、站点路由组内的 `pwa`/`lib` 以及 `app/auth`、`app/trpc` 是普通共置目录，不是 Next.js `_folder` 私有目录；除 Next 明确发现的入口外，不在这些实现目录中放置 `page`、`route` 或 metadata 入口。目录命名不替代 `server-only`、类型导入或认证授权边界。

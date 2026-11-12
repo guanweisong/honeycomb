@@ -1,1 +1,2 @@
+. scripts/configure-local-tmpdir.sh
 bun check-types && bun lint && bun test:unit:run

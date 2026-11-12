@@ -10,6 +10,7 @@ import PageTitle from "@/app/(blog)/components/PageTitle";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { MenuType } from "@/features/menu/types/menu.type";
 import { createServerClient } from "@/app/trpc/server";
+import { getCachedMetadataSettings } from "@/app/(blog)/lib/metadata-settings";
 import { RichText } from "@/app/(blog)/components/features/media/public/RichText";
 import { ContentViewTracker } from "@/app/(blog)/components/ContentViewTracker";
 import { PageTemplate } from "@/features/page/types/page.template";
@@ -18,10 +19,7 @@ import { getTranslations } from "next-intl/server";
 import LoadingState from "@/components/LoadingState";
 import { assertPublishedPage } from "@/app/(blog)/[locale]/pages/[id]/page.utils";
 import { assertDetailId } from "@/app/(blog)/lib/assert-detail-id";
-import {
-  createContentMetadata,
-  DynamicMetadataMarker,
-} from "@/app/(blog)/lib/metadata";
+import { createContentMetadata } from "@/app/(blog)/lib/metadata";
 import { EnableStatus } from "@/lib/validation/enable-status";
 import { MAX_PAGE_SIZE } from "@/lib/validation/resource-limits";
 import { connection } from "next/server";
@@ -51,14 +49,9 @@ async function getPrefetchedPageDetail(id: string) {
  */
 export default function Pages(props: PageProps<"/[locale]/pages/[id]">) {
   return (
-    <>
-      <Suspense fallback={null}>
-        <DynamicMetadataMarker />
-      </Suspense>
-      <Suspense fallback={<LoadingState variant="region" />}>
-        <PageContent {...props} />
-      </Suspense>
-    </>
+    <Suspense fallback={<LoadingState variant="region" />}>
+      <PageContent {...props} />
+    </Suspense>
   );
 }
 
@@ -188,12 +181,10 @@ async function FriendlyLinks({
 export async function generateMetadata(
   props: PageProps<"/[locale]/pages/[id]">,
 ) {
-  await connection();
   const { id, locale: rawLocale } = await props.params;
   assertDetailId(id);
-  const trpc = await createServerClient();
   const [setting, pageDetail] = await Promise.all([
-    trpc.setting.index(),
+    getCachedMetadataSettings(),
     getPrefetchedPageDetail(id),
   ]);
   const publishedPage = assertPublishedPage(pageDetail);

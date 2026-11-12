@@ -155,7 +155,7 @@ describe("pages detail page", () => {
       const content = Pages({
         params: Promise.resolve({ id: "333333333333333333333333", locale }),
         searchParams: Promise.resolve({}),
-      }).props.children[1].props.children;
+      }).props.children;
       const rendered = content.type(content.props);
       try {
         await vi.waitFor(() => expect(mockGetTranslations).toHaveBeenCalled());

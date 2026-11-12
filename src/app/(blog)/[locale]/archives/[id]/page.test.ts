@@ -16,6 +16,7 @@ const mockRandomPosts = vi.fn();
 const mockIncrementViews = vi.fn();
 const mockClientIncrementViews = vi.fn();
 const mockComments = vi.fn();
+const mockPrefetch = vi.fn();
 
 vi.mock("react", async (importOriginal) => {
   const original = await importOriginal<typeof import("react")>();
@@ -37,6 +38,7 @@ vi.mock("next/server", async (importOriginal) => ({
 vi.mock("next/cache", () => ({
   cacheLife: vi.fn(),
   cacheTag: vi.fn(),
+  prefetch: () => mockPrefetch(),
 }));
 
 vi.mock("next-intl/server", () => ({
@@ -167,6 +169,7 @@ describe("archives page", () => {
     root = createRoot(container);
 
     mockGetLocale.mockReset().mockResolvedValue("zh");
+    mockPrefetch.mockReset().mockResolvedValue(undefined);
     mockCreateServerClient.mockReset();
     mockGetTranslations.mockReset().mockResolvedValue((key: string) => {
       const values: Record<string, string> = {
@@ -196,18 +199,20 @@ describe("archives page", () => {
     container.remove();
   });
 
-  async function renderArchive(detail: DetailFixture) {
+  function archiveContent(detail: DetailFixture) {
     mockPostDetail.mockResolvedValue(detail);
     const route = Archives({
       params: Promise.resolve({ id: detail.id, locale: "zh" }),
       searchParams: Promise.resolve({}),
     });
-    const content = React.Children.toArray(
-      route.props.children,
-    )[1] as React.ReactElement;
-    const element = await (
-      content.type as (props: unknown) => Promise<React.ReactNode>
-    )(content.props);
+    const content = route.props.children as React.ReactElement;
+    return (content.type as (props: unknown) => Promise<React.ReactNode>)(
+      content.props,
+    );
+  }
+
+  async function renderArchive(detail: DetailFixture) {
+    const element = await archiveContent(detail);
     await act(async () => root.render(element));
   }
 
@@ -229,9 +234,7 @@ describe("archives page", () => {
         params: Promise.resolve({ id: articleDetail.id, locale }),
         searchParams: Promise.resolve({}),
       });
-      const content = React.Children.toArray(
-        route.props.children,
-      )[1] as React.ReactElement;
+      const content = route.props.children as React.ReactElement;
       const rendered = (
         content.type as (props: unknown) => Promise<React.ReactNode>
       )(content.props);
@@ -295,12 +298,7 @@ describe("archives page", () => {
     expect(mockComments).not.toHaveBeenCalled();
     expect(container.textContent).not.toContain("3 comments");
   });
-  it("renders the article while recommendations are still pending", async () => {
-    mockGetTranslations.mockResolvedValue((key: string) => {
-      if (key === "loading") return "Loading recommendations";
-      if (key === "guessWhatYouLike") return "猜你喜欢";
-      return key;
-    });
+  it("waits for recommendations before rendering the article", async () => {
     let resolveRecommendations!: (
       posts: { id: string; title: { zh: string } }[],
     ) => void;
@@ -310,31 +308,36 @@ describe("archives page", () => {
       }),
     );
 
-    await renderArchive({ ...articleDetail });
+    const pending = archiveContent({ ...articleDetail });
+    let pageContentSettled = false;
+    void pending.then(
+      () => {
+        pageContentSettled = true;
+      },
+      () => {
+        pageContentSettled = true;
+      },
+    );
+    await vi.waitFor(() => expect(mockPrefetch).toHaveBeenCalledOnce());
+    await vi.waitFor(() => expect(mockRandomPosts).toHaveBeenCalledOnce());
+    expect(mockCreateServerClient).toHaveBeenCalledWith({
+      requestContext: { requestId: "public-recommendation-prefetch" },
+      skipRequestObservability: true,
+    });
+    expect(pageContentSettled).toBe(false);
+
+    resolveRecommendations([
+      { id: "111111111111111111111111", title: { zh: "当前文章" } },
+      { id: "222222222222222222222222", title: { zh: "稍后推荐" } },
+    ]);
+    const element = await pending;
+    await act(async () => root.render(element));
 
     expect(container.querySelector("h1")?.textContent).toBe("文章标题");
     expect(
       container.querySelector('[data-testid="rich-text"]')?.textContent,
     ).toBe("文章正文");
     expect(container.querySelector('[data-testid="comment"]')).not.toBeNull();
-    const recommendationSkeleton = container.querySelector(
-      '[role="status"][aria-busy="true"]',
-    );
-    expect(recommendationSkeleton?.getAttribute("aria-label")).toBe(
-      "Loading recommendations",
-    );
-    expect(
-      recommendationSkeleton?.querySelectorAll('[data-slot="skeleton"]').length,
-    ).toBeGreaterThan(0);
-    expect(container.querySelector('[data-title="猜你喜欢"]')).toBeNull();
-
-    await act(async () => {
-      resolveRecommendations([
-        { id: "111111111111111111111111", title: { zh: "当前文章" } },
-        { id: "222222222222222222222222", title: { zh: "稍后推荐" } },
-      ]);
-    });
-
     expect(
       container.querySelector('a[href="/archives/222222222222222222222222"]')
         ?.textContent,
@@ -342,7 +345,10 @@ describe("archives page", () => {
     expect(
       container.querySelector('a[href="/archives/111111111111111111111111"]'),
     ).toBeNull();
-    expect(container.querySelector('[role="status"]')).toBeNull();
+    expect(container.querySelector('[data-title="猜你喜欢"]')).not.toBeNull();
+    expect(
+      container.querySelector('[role="status"][aria-busy="true"]'),
+    ).toBeNull();
   });
 
   it("keeps the article readable after a delayed recommendation failure", async () => {
@@ -353,10 +359,11 @@ describe("archives page", () => {
       }),
     );
 
-    await renderArchive({ ...articleDetail });
-    await act(async () => {
-      rejectRecommendations(new Error("Recommendations unavailable"));
-    });
+    const pending = archiveContent({ ...articleDetail });
+    await vi.waitFor(() => expect(mockRandomPosts).toHaveBeenCalledOnce());
+    rejectRecommendations(new Error("Recommendations unavailable"));
+    const element = await pending;
+    await act(async () => root.render(element));
 
     expect(container.querySelector("h1")?.textContent).toBe("文章标题");
     expect(

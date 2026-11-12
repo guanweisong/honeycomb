@@ -92,26 +92,43 @@ async function expectPrefetchedBody(
   payloads: Map<string, RscPayload[]>,
   href: string,
   expectedText: string,
+  options: { additionalText?: string; completed?: boolean } = {},
 ) {
   try {
     await expect
-      .poll(() =>
-        payloads.get(href)?.some((payload) =>
-          payload.body.includes(expectedText),
-        ),
-      )
+      .poll(() => {
+        const payload = payloads
+          .get(href)
+          ?.find(
+            (candidate) =>
+              candidate.body.includes(expectedText) &&
+              (!options.additionalText ||
+                candidate.body.includes(options.additionalText)) &&
+              (!options.completed ||
+                (candidate.completed &&
+                  candidate.status !== undefined &&
+                  candidate.status >= 200 &&
+                  candidate.status < 300)),
+          );
+        return payload !== undefined;
+      })
       .toBe(true);
   } catch (error) {
     const diagnostics = payloads.get(href)?.map((payload) => ({
       status: payload.status,
       bytes: Buffer.byteLength(payload.body),
       hasExpectedText: payload.body.includes(expectedText),
+      hasAdditionalText: options.additionalText
+        ? payload.body.includes(options.additionalText)
+        : undefined,
       prefetch: payload.headers["next-router-prefetch"],
       segmentPrefetch: payload.headers["next-router-segment-prefetch"],
       completed: payload.completed,
       error: payload.error,
     }));
-    console.error(`[RSC prefetch] ${href}: ${JSON.stringify(diagnostics ?? [])}`);
+    console.error(
+      `[RSC prefetch] ${href}: ${JSON.stringify(diagnostics ?? [])}`,
+    );
     throw error;
   }
 }
@@ -144,15 +161,48 @@ test.describe("blog detail body prefetch", () => {
 
     const href = "/en/archives/000000000000000000000005";
     const bodyText = "Deterministic browser test content.";
+    const recommendationHeading = "Guess what you like";
     const link = page.locator(`main a[href="${href}"]`).first();
     await expect(link).toBeVisible();
-    await expectPrefetchedBody(payloads, href, bodyText);
+    await expectPrefetchedBody(payloads, href, bodyText, {
+      additionalText: recommendationHeading,
+      completed: true,
+    });
 
-    await link.click();
+    let navigationResponseReleased = false;
+    let releaseNavigationResponse: (() => void) | undefined;
+    await page.route("**/*", async (route) => {
+      const request = route.request();
+      const headers = request.headers();
+      if (
+        new URL(request.url()).pathname === href &&
+        headers.rsc === "1" &&
+        !headers["next-router-prefetch"] &&
+        !navigationResponseReleased
+      ) {
+        await new Promise<void>((resolve) => {
+          releaseNavigationResponse = resolve;
+        });
+      }
+      await route.continue();
+    });
+
+    const navigation = link.click();
+    navigation.catch(() => undefined);
+    try {
+      await expect(page.locator("main .prose-editor").first()).toContainText(
+        bodyText,
+        { timeout: 2000 },
+      );
+      await expect(page.locator("main")).toContainText(
+        recommendationHeading,
+      );
+    } finally {
+      navigationResponseReleased = true;
+      releaseNavigationResponse?.();
+    }
+    await navigation;
     await expect(page).toHaveURL(href);
-    await expect(page.locator("main .prose-editor").first()).toContainText(
-      bodyText,
-    );
   });
 
   test("@production prefetches the public page body from the menu", async ({

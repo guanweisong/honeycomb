@@ -11,6 +11,7 @@
 - 架构断言按[规则索引](architecture.md)对应的 Requirement 选择，静态边界通过不替代真实行为测试。
 - 覆盖范围、允许排除与最低门槛以[覆盖率规范](../../../../openspec/specs/coverage-governance/spec.md)为准；实际配置在 [vitest.config.mts](../../../../vitest.config.mts)，由[覆盖率门禁](../../../../tests/tooling/coverage-governance.test.ts)验证，不在文档另抄阈值。
 - 测试分组、命令及 CI/E2E 运行方法见[测试指南](../../../../tests/README.md)。保留完整 Chromium 库存，关键场景不条件跳过；Service Worker 排除所需的真实离线 E2E 未运行时明确标为未验证。
+- 测试断言可靠性遵循仓库根目录 [AGENTS.md](../../../../AGENTS.md#测试断言可靠性)，避免异步等待断言和 mock API 不匹配造成的假阳性。
 - 需要数据库时，**REQUIRED SUB-SKILL:** Use [test-database-safety](../../test-database-safety/SKILL.md)。
 
 ## 交付检查

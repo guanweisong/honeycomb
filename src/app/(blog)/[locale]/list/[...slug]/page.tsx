@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import PostList from "@/app/(blog)/components/features/post/public/components/PostList";
 import NoData from "@/app/(blog)/[locale]/list/[...slug]/components/NoData";
 import { getTranslations } from "next-intl/server";
 import { notFound, redirect } from "next/navigation";
 import { Metadata } from "next";
+import { PostListSkeleton } from "@/app/(blog)/components/features/post/public/components/PostList/Skeleton";
 import { createContentMetadata } from "@/app/(blog)/lib/metadata";
 import { resolveListTitle } from "@/app/(blog)/[locale]/list/[...slug]/page.utils";
 import { getCachedListPageData } from "@/app/(blog)/[locale]/list/[...slug]/page.data";
@@ -14,7 +16,16 @@ import { getCachedListPageData } from "@/app/(blog)/[locale]/list/[...slug]/page
  * @returns {Promise<JSX.Element>} 文章列表页面。
  */
 export default function List(props: PageProps<"/[locale]/list/[...slug]">) {
-  return <ListContent {...props} />;
+  return (
+    <Suspense fallback={<ListLoadingFallback />}>
+      <ListContent {...props} />
+    </Suspense>
+  );
+}
+
+async function ListLoadingFallback() {
+  const t = await getTranslations("PostList");
+  return <PostListSkeleton label={t("loading")} />;
 }
 
 function getListRouteData(

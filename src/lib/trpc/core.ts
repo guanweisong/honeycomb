@@ -60,22 +60,20 @@ const applicationErrorMiddleware = t.middleware(async ({ next }) => {
 
 const requestObservabilityMiddleware = t.middleware(
   async ({ ctx, next, path, type }) => {
-    const observabilityEnabled = ctx.requestObservabilityEnabled !== false;
+    if (ctx.requestObservabilityEnabled === false) return next();
 
-    const startedAt = Date.now();
+    const startedAt = performance.now();
     const baseContext = {
       requestId: ctx.requestId,
       procedure: path,
       method: type,
     };
 
-    if (observabilityEnabled)
-      getLogger().info(LogEvent.requestStarted, baseContext);
+    getLogger().info(LogEvent.requestStarted, baseContext);
 
     const result = await next();
-    if (!observabilityEnabled) return result;
 
-    const durationMs = Date.now() - startedAt;
+    const durationMs = performance.now() - startedAt;
     const outcome = result.ok ? "success" : result.error.code;
     const labels = { procedure: path, method: type, outcome };
     const completedContext = { ...baseContext, durationMs, outcome };

@@ -8,6 +8,38 @@ import { createConsoleMetricSink } from "@/lib/observability/adapters/console-me
 import { createSafeMetrics } from "@/lib/observability/core/safe-adapters";
 
 describe("console metrics", () => {
+  it("timestamps metrics without reading the wall clock", () => {
+    const write = vi.fn();
+    const metrics = createConsoleMetricSink({ write });
+    const originalDate = globalThis.Date;
+    const wallClockUnavailable = new Error(
+      "Wall-clock time is unavailable during prerendering",
+    );
+    const now = vi.spyOn(originalDate, "now").mockImplementation(() => {
+      throw wallClockUnavailable;
+    });
+    class DateWithoutWallClock extends originalDate {
+      constructor(...args: [] | [value: string | number | Date]) {
+        if (args.length === 0) {
+          throw wallClockUnavailable;
+        }
+        super(args[0] ?? Number.NaN);
+      }
+    }
+    vi.stubGlobal("Date", DateWithoutWallClock);
+
+    try {
+      metrics.increment(MetricName.apiRequestsTotal);
+    } finally {
+      vi.stubGlobal("Date", originalDate);
+      now.mockRestore();
+    }
+
+    expect(JSON.parse(write.mock.calls[0]?.[0] ?? "{}").timestamp).toMatch(
+      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+    );
+  });
+
   it("输出包含稳定运行时字段的 counter 与 duration JSON", () => {
     const lines: string[] = [];
     const metrics = createSafeMetrics(

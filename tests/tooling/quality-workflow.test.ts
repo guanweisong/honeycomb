@@ -30,6 +30,12 @@ const setupAction = readFileSync(
   "utf8",
 );
 const fixtureHelper = readFileSync("scripts/ci-fixture-lifecycle.sh", "utf8");
+const localTmpDirHelper = readFileSync(
+  "scripts/configure-local-tmpdir.sh",
+  "utf8",
+);
+const preCommitHook = readFileSync(".husky/pre-commit", "utf8");
+const verifyPrScript = readFileSync("scripts/verify-pr.sh", "utf8");
 const packageJson = JSON.parse(
   readFileSync(resolve(process.cwd(), "package.json"), "utf8"),
 ) as {
@@ -145,6 +151,23 @@ describe("quality workflow", () => {
     }
   });
 
+  it("exposes the local PR verification command", () => {
+    expect(packageJson.scripts["verify:pr"]).toBe(
+      "bash scripts/verify-pr.sh",
+    );
+  });
+
+  it("shares canonical temporary-directory setup across local checks", () => {
+    expect(preCommitHook).toContain(". scripts/configure-local-tmpdir.sh");
+    expect(verifyPrScript).toContain(
+      "source scripts/configure-local-tmpdir.sh",
+    );
+    expect(localTmpDirHelper).toContain(
+      'if [ "$(uname -s)" = "Darwin" ] && [ -d /private/tmp ]; then',
+    );
+    expect(localTmpDirHelper).toContain("export TMPDIR=/private/tmp");
+  });
+
   it("pins each external action to a full commit SHA", () => {
     const references = [workflow, fullWorkflow, setupAction].flatMap((source) =>
       [...source.matchAll(/uses: (?!\.\/)(\S+)/g)].map((match) => match[1]),
@@ -190,7 +213,7 @@ describe("quality workflow", () => {
       "bun run test:unit:coverage",
       "bun run test:unit:process",
       "bun run audit:production",
-      "bun run db:e2e:seed",
+      "bun --no-env-file scripts/seed-e2e.ts",
       "bun run test:e2e:development",
       "bun run test:e2e:production",
     ]) {
@@ -198,7 +221,9 @@ describe("quality workflow", () => {
         command,
       );
     }
-    expect(fixtureHelper).toContain("bun run db:migrate");
+    expect(fixtureHelper).toContain(
+      "bun --no-env-file scripts/migrate-database.ts",
+    );
     expect(fixtureHelper).not.toContain("bun run db:invariants:audit");
     expect(workflow).not.toContain("bun audit --audit-level=critical");
     expect(`${workflow}\n${fullWorkflow}`).not.toMatch(
