@@ -28,6 +28,11 @@ import {
   PAGE_DETAILS_CACHE_TAG,
   pageDetailCacheTag,
 } from "@/lib/cache/public-cache-keys";
+import { getPublishedPageDetailStaticParams } from "@/app/(blog)/lib/server/detail-static-params";
+
+export function generateStaticParams() {
+  return getPublishedPageDetailStaticParams();
+}
 
 async function getPrefetchedPageDetail(id: string) {
   "use cache";

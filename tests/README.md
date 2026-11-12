@@ -85,6 +85,8 @@ bun --no-env-file run verify:pr
 
 macOS 上的本地提交钩子和此命令共用规范化的临时目录设置，以避免 `/var/folders` 与 `/private/var/folders` 路径别名影响 fixture 安全检查。提交或 PR 验证遇到环境问题时，按仓库根目录 [AGENTS.md](../AGENTS.md) 的“本地提交与 PR 环境问题固化”规则处理：可由仓库控制的问题要修入共享流程；外部或本机问题要记录恢复步骤和未完成的验证。
 
+手工执行其他数据库 fixture 命令（例如本地生产构建）时，使用 Bash，并在创建临时目录前先加载 `scripts/configure-local-tmpdir.sh`。`scripts/ci-fixture-lifecycle.sh` 依赖 Bash；macOS 的临时路径也需要规范化，否则可能触发 fixture 路径安全检查。
+
 需要数据库的 CI 任务各自创建随机独占 fixture。`scripts/ci-fixture-lifecycle.sh` 提供 fixture 初始化、迁移与 seed 的入口，并处理退出清理、信号和阶段计时。子进程测试使用 `tests/helpers/run-test-process.ts`。历史迁移测试通过 `tests/helpers/local-test-database.ts` 管理独占本地 client 和显式 journal 截止版本，业务 seed、真实 SQL 与回滚断言保留在各 suite。
 
 E2E 的显式临时目录初始化、凭据隔离及清理契约见 [README 的 E2E 说明](../README.md#可用脚本)。包命令的 `scripts/e2e-preflight.ts` 只做参数和报告目的地预检，不替代现有 CI 生命周期或 Playwright 服务管理。普通筛选与诊断参数保持可用；配置、输出、源码更新及自定义 reporter 覆盖被拒绝。`--list` / `--help` 使用 stdout，不初始化数据库或启动服务。
