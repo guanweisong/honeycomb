@@ -4,6 +4,7 @@ import NoData from "@/app/(blog)/[locale]/list/[...slug]/components/NoData";
 import { getTranslations } from "next-intl/server";
 import { notFound, redirect } from "next/navigation";
 import { Metadata } from "next";
+import { PostListSkeleton } from "@/app/(blog)/components/features/post/public/components/PostList/Skeleton";
 import { createContentMetadata } from "@/app/(blog)/lib/metadata";
 import { resolveListTitle } from "@/app/(blog)/[locale]/list/[...slug]/page.utils";
 import { getCachedListPageData } from "@/app/(blog)/[locale]/list/[...slug]/page.data";
@@ -16,10 +17,15 @@ import { getCachedListPageData } from "@/app/(blog)/[locale]/list/[...slug]/page
  */
 export default function List(props: PageProps<"/[locale]/list/[...slug]">) {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ListLoadingFallback />}>
       <ListContent {...props} />
     </Suspense>
   );
+}
+
+async function ListLoadingFallback() {
+  const t = await getTranslations("PostList");
+  return <PostListSkeleton label={t("loading")} />;
 }
 
 function getListRouteData(

@@ -1,6 +1,7 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
+import { PostListSkeleton } from "@/app/(blog)/components/features/post/public/components/PostList/Skeleton";
 
 (
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -128,6 +129,22 @@ describe("blog list page", () => {
   afterEach(async () => {
     await act(async () => root.unmount());
     container.remove();
+  });
+
+  it("uses the article-list skeleton as the route loading fallback", async () => {
+    const boundary = List({
+      params: Promise.resolve({ locale: "zh", slug: ["category"] }),
+      searchParams: Promise.resolve({}),
+    });
+    const fallback = boundary.props.fallback as React.ReactElement;
+    const renderedFallback = await (
+      fallback.type as () => Promise<React.ReactNode>
+    )();
+
+    expect(React.isValidElement(renderedFallback)).toBe(true);
+    const skeleton = renderedFallback as React.ReactElement<{ label: string }>;
+    expect(skeleton.type).toBe(PostListSkeleton);
+    expect(skeleton.props.label).toBe("loading");
   });
 
   async function renderList(slug: string[]) {

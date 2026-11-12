@@ -14,6 +14,7 @@
     "emptyTip": "The category currently has no articles！",
     "postUnderTag": "Articles under the tag {tag}",
     "postUnderAuthor": "Articles under the author {author}",
+    "loading": "Loading articles...",
     "loadingMore": "Loading more articles...",
     "listEnd": "Reach the end"
   },
