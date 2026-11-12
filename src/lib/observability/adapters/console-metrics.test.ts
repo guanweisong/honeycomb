@@ -11,13 +11,27 @@ describe("console metrics", () => {
   it("timestamps metrics without reading the wall clock", () => {
     const write = vi.fn();
     const metrics = createConsoleMetricSink({ write });
-    const now = vi.spyOn(Date, "now").mockImplementation(() => {
-      throw new Error("Wall-clock time is unavailable during prerendering");
+    const originalDate = globalThis.Date;
+    const wallClockUnavailable = new Error(
+      "Wall-clock time is unavailable during prerendering",
+    );
+    const now = vi.spyOn(originalDate, "now").mockImplementation(() => {
+      throw wallClockUnavailable;
     });
+    class DateWithoutWallClock extends originalDate {
+      constructor(...args: [] | [value: string | number | Date]) {
+        if (args.length === 0) {
+          throw wallClockUnavailable;
+        }
+        super(args[0] ?? Number.NaN);
+      }
+    }
+    vi.stubGlobal("Date", DateWithoutWallClock);
 
     try {
       metrics.increment(MetricName.apiRequestsTotal);
     } finally {
+      vi.stubGlobal("Date", originalDate);
       now.mockRestore();
     }
 

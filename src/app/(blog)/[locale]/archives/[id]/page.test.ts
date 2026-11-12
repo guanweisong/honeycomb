@@ -313,17 +313,22 @@ describe("archives page", () => {
     );
 
     const pending = archiveContent({ ...articleDetail });
+    let pageContentSettled = false;
+    void pending.then(
+      () => {
+        pageContentSettled = true;
+      },
+      () => {
+        pageContentSettled = true;
+      },
+    );
     await vi.waitFor(() => expect(mockPrefetch).toHaveBeenCalledOnce());
     await vi.waitFor(() => expect(mockRandomPosts).toHaveBeenCalledOnce());
     expect(mockCreateServerClient).toHaveBeenCalledWith({
       requestContext: { requestId: "public-recommendation-prefetch" },
       skipRequestObservability: true,
     });
-    const resolvedEarly = await Promise.race([
-      pending.then(() => true),
-      Promise.resolve(false),
-    ]);
-    expect(resolvedEarly).toBe(false);
+    expect(pageContentSettled).toBe(false);
 
     resolveRecommendations([
       { id: "111111111111111111111111", title: { zh: "当前文章" } },
