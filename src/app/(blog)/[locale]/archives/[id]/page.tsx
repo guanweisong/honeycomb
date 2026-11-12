@@ -73,6 +73,8 @@ async function getPrefetchedPostDetail(id: string) {
 export default function Archives(props: PageProps<"/[locale]/archives/[id]">) {
   const content = <ArchiveContent {...props} />;
   if (process.env.NODE_ENV === "development") {
+    // Let Next's dev instant-route validator see URL params behind Suspense.
+    // Production must render generated detail bodies into the first HTML response.
     return <Suspense fallback={null}>{content}</Suspense>;
   }
   return content;

@@ -55,6 +55,8 @@ async function getPrefetchedPageDetail(id: string) {
 export default function Pages(props: PageProps<"/[locale]/pages/[id]">) {
   const content = <PageContent {...props} />;
   if (process.env.NODE_ENV === "development") {
+    // Let Next's dev instant-route validator see URL params behind Suspense.
+    // Production must render generated detail bodies into the first HTML response.
     return (
       <Suspense fallback={<LoadingState variant="region" />}>
         {content}

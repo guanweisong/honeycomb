@@ -25,6 +25,7 @@
 
 - 本地提交、PR 验证或 CI 因环境差异失败时，MUST 定位根因并判断是否可复现；MUST NOT 把一次性环境变量、跳过检查或仅本机有效的改动当作问题已解决。
 - 根因可由仓库控制且可能影响其他开发者或 CI 时，MUST 将修复固化到共享脚本、配置或工作流，并增加针对性回归保护、更新验证文档。机器、网络或外部服务导致且无法由仓库控制的问题，MUST 记录安全、可复用的恢复步骤，并明确剩余验证状态。
+- 在受限 macOS sandbox 中，如果 Next dev 因 `unable to start FSEvent stream` 无法启动，随后 Webpack watcher 又报告 `Watchpack Error: EMFILE`，MUST 保留失败记录，不得为绕过限制切换项目默认 bundler 或跳过 E2E；本地开发态 E2E 标记为未验证，并以 GitHub Linux `high_risk_development_e2e` 作为门禁结果。若可用普通主机 checkout，再从该环境重试。
 - 共享规则和脚本 MUST NOT 写入个人绝对路径、凭据或机器状态；任何环境 workaround MUST NOT 弱化既有检查或被报告为通过。
 
 ## Blog 内容预取保护
