@@ -40,35 +40,35 @@
 - Produces: `bun --no-env-file run verify:pr`, mapped to `bash scripts/verify-pr.sh`.
 - Reuses: `prepare_fixture()` and `phase()` from `scripts/ci-fixture-lifecycle.sh`.
 
-- [ ] **Step 1: Add a failing entrypoint contract test**
+- [x] **Step 1: Add a failing entrypoint contract test**
 
 In `tests/tooling/quality-workflow.test.ts`, add a test named `exposes the local PR verification command` that expects `packageJson.scripts["verify:pr"]` to equal `bash scripts/verify-pr.sh`.
 
-- [ ] **Step 2: Run the contract test and confirm it fails**
+- [x] **Step 2: Run the contract test and confirm it fails**
 
 Run: `bun --no-env-file run --bun vitest run tests/tooling/quality-workflow.test.ts`
 
 Expected: the new assertion fails because `verify:pr` is not registered yet.
 
-- [ ] **Step 3: Implement the runner and register it**
+- [x] **Step 3: Implement the runner and register it**
 
 Create `scripts/verify-pr.sh` with `set -euo pipefail`; on macOS use `/private/tmp` for `TMPDIR` when available; set the safe build-only site/auth values and `E2E_SEED=1`; create `HONEYCOMB_TEST_DIR` with `mktemp`; source `scripts/ci-fixture-lifecycle.sh` immediately; call `prepare_fixture()`; then run four named phases in order: type generation plus `tsc --noEmit`, ESLint, strict OpenSpec validation plus `scripts/check-diff.ts`, and the full Vitest suite. Invoke Bun directly with `--no-env-file` for every phase so nested package scripts cannot reload `.env`. Use the helper's `phase()` so failures stop the runner and its existing EXIT/signal trap cleans the fixture. Update Bun calls in the lifecycle helper to pass `--no-env-file` where supported.
 
 Register `"verify:pr": "bash scripts/verify-pr.sh"` in `package.json`. Update the existing workflow-contract expectations accordingly. Add a `Local PR verification` section to `tests/README.md` with `bun --no-env-file run verify:pr`, its scope, its isolated database behavior, and the CI-owned production checks.
 
-- [ ] **Step 4: Run the contract test and confirm it passes**
+- [x] **Step 4: Run the contract test and confirm it passes**
 
 Run: `bun --no-env-file run --bun vitest run tests/tooling/quality-workflow.test.ts`
 
 Expected: the workflow contract suite passes.
 
-- [ ] **Step 5: Run the new command end to end**
+- [x] **Step 5: Run the new command end to end**
 
 Run: `bun --no-env-file run verify:pr`
 
 Expected: all four phases pass, the output reports fixture cleanup with `final exit=0`, and the temporary fixture directory no longer exists.
 
-- [ ] **Step 6: Commit the finished change**
+- [x] **Step 6: Commit the finished change**
 
 ```bash
 git add package.json scripts/verify-pr.sh scripts/ci-fixture-lifecycle.sh tests/tooling/quality-workflow.test.ts tests/README.md docs/superpowers/specs/2026-11-12-local-pr-verification-design.md docs/superpowers/plans/2026-11-12-local-pr-verification.md
