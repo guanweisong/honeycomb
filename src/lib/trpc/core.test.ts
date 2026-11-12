@@ -58,9 +58,16 @@ describe("tRPC observability middleware", () => {
       observed: publicProcedure.query(() => "ok"),
     });
 
-    await expect(router.createCaller(createContext()).observed()).resolves.toBe(
-      "ok",
-    );
+    const now = vi.spyOn(Date, "now").mockImplementation(() => {
+      throw new Error("Wall-clock time is unavailable during prerendering");
+    });
+    try {
+      await expect(
+        router.createCaller(createContext()).observed(),
+      ).resolves.toBe("ok");
+    } finally {
+      now.mockRestore();
+    }
 
     expect(memory.logEvents).toEqual([
       {
@@ -86,6 +93,33 @@ describe("tRPC observability middleware", () => {
         name: MetricName.apiErrorsTotal,
       }),
     );
+  });
+
+  it("skips wall-clock reads and telemetry when request observability is disabled", async () => {
+    const memory = createMemoryObservability();
+    configureObservability(memory);
+    const router = createTRPCRouter({
+      observed: publicProcedure.query(() => "ok"),
+    });
+    const now = vi.spyOn(Date, "now").mockImplementation(() => {
+      throw new Error("Wall-clock time is unavailable during prerendering");
+    });
+
+    try {
+      await expect(
+        router
+          .createCaller({
+            ...createContext(),
+            requestObservabilityEnabled: false,
+          })
+          .observed(),
+      ).resolves.toBe("ok");
+    } finally {
+      now.mockRestore();
+    }
+
+    expect(memory.logEvents).toEqual([]);
+    expect(memory.metricEvents).toEqual([]);
   });
 
   it("records a BAD_REQUEST validation failure without request input", async () => {

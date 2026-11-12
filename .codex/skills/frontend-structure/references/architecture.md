@@ -8,6 +8,7 @@
 | 技术库、通用 UI 与认证会话例外                  | [package-layer-architecture](../../../../openspec/specs/package-layer-architecture/spec.md)：技术依赖不加载业务运行时                                                                             |
 | PWA worker 唯一源、覆盖率与站点路径             | [pwa-offline-reliability](../../../../openspec/specs/pwa-offline-reliability/spec.md)；[coverage-governance](../../../../openspec/specs/coverage-governance/spec.md)                             |
 | Blog 站内导航与正文/列表内容预取                  | [instant-navigation](../../../../openspec/specs/instant-navigation/spec.md)：详情预取必须包含公开正文，菜单分类列表预取必须包含首屏卡片                                              |
+| Next.js 预渲染、URL 预取与动态边界                | [nextjs-runtime-performance](../../../../openspec/specs/nextjs-runtime-performance/spec.md)：默认保留预渲染与预取，不为非确定性时间/随机值或观测引入无必要动态边界                 |
 | 纯模块的直接与间接依赖                          | [feature-module-contract](../../../../openspec/specs/feature-module-contract/spec.md)：模块依赖方向必须可自动验证                                                                                 |
 | 根 tRPC 组合、跨 feature 具名入口               | [feature-business-boundaries](../../../../openspec/specs/feature-business-boundaries/spec.md)：Transport infrastructure is separate from business features、跨 Feature 导入必须经过公开边界       |
 | server 操作、入口保护、直接数据库访问、纯转发层 | [application-use-case-boundary](../../../../openspec/specs/application-use-case-boundary/spec.md)：业务操作由 Feature server 函数负责、服务端操作允许直接数据库访问、纯转发层不得作为业务抽象保留 |

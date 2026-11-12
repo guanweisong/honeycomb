@@ -28,6 +28,7 @@ vi.mock("next/server", async (importOriginal) => ({
 vi.mock("next/cache", () => ({
   cacheLife: vi.fn(),
   cacheTag: vi.fn(),
+  prefetch: vi.fn(async () => undefined),
 }));
 vi.mock("@/app/trpc/server", () => ({
   createServerClient: async () => ({

@@ -18,7 +18,6 @@ import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { BookOpen, Calendar, Camera } from "lucide-react";
 import { Metadata } from "next";
 import { createServerClient } from "@/app/trpc/server";
-import { Skeleton } from "@/components/ui/skeleton";
 import { MenuType } from "@/features/menu/types/menu.type";
 import { PostType } from "@/features/post/types/post.type";
 import { RichText } from "@/app/(blog)/components/features/media/public/RichText";
@@ -38,7 +37,7 @@ import {
 import LoadingState from "@/components/LoadingState";
 import { assertDetailId } from "@/app/(blog)/lib/assert-detail-id";
 import { connection } from "next/server";
-import { cacheLife, cacheTag } from "next/cache";
+import { cacheLife, cacheTag, prefetch } from "next/cache";
 import {
   POST_DETAILS_CACHE_TAG,
   postDetailCacheTag,
@@ -96,6 +95,7 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
   ]);
 
   const category = assertPostCategory(postDetail);
+  const recommendations = await getRecommendedPosts(category.id, postDetail.id);
 
   const hasComments = postDetail.commentStatus === EnableStatus.ENABLE;
   const title = getPostTitle(postDetail, locale);
@@ -189,21 +189,19 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
         </ul>
       )}
       <Tags {...postDetail} />
-      <Suspense
-        fallback={
-          <RecommendedPostsSkeleton
-            title={t("guessWhatYouLike")}
-            label={postInfoT("loading")}
-          />
-        }
-      >
-        <RecommendedPosts
-          categoryId={category.id}
-          postId={postDetail.id}
-          locale={locale}
-          title={t("guessWhatYouLike")}
-        />
-      </Suspense>
+      {recommendations.length > 0 && (
+        <Card title={t("guessWhatYouLike")}>
+          <ul className="leading-5 list-outside ml-4 mt-2 list-disc">
+            {recommendations.map((item) => (
+              <li key={item.id} className="my-2">
+                <Link href={`/archives/${item.id}`} className="link-light">
+                  {item.title?.[locale] || item.quoteContent?.[locale]}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
       {hasComments && (
         <CommentClient id={id} type={MenuType.CATEGORY}>
           <Suspense
@@ -223,89 +221,19 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
   );
 }
 
-async function RecommendedPosts({
-  categoryId,
-  postId,
-  locale,
-  title,
-}: {
-  categoryId: string;
-  postId: string;
-  locale: ReturnType<typeof normalizeMultiLangLocale>;
-  title: string;
-}) {
-  await connection();
-  const trpc = await createServerClient();
-  let randomPostsList: Awaited<
-    ReturnType<typeof trpc.post.getRandomByCategory>
-  >;
+async function getRecommendedPosts(categoryId: string, postId: string) {
+  await prefetch();
+  const trpc = await createServerClient({
+    requestContext: { requestId: "public-recommendation-prefetch" },
+    skipRequestObservability: true,
+  });
   try {
-    randomPostsList = await trpc.post.getRandomByCategory({ categoryId });
+    const randomPostsList = await trpc.post.getRandomByCategory({ categoryId });
+    return randomPostsList.filter((item) => item.id !== postId);
   } catch {
     // Recommendations are optional and must not replace the article on failure.
-    return null;
+    return [];
   }
-
-  const recommendations = randomPostsList.filter((item) => item.id !== postId);
-  if (recommendations.length === 0) return null;
-
-  return (
-    <Card title={title}>
-      <ul className="leading-5 list-outside ml-4 mt-2 list-disc">
-        {recommendations.map((item) => (
-          <li key={item.id} className="my-2">
-            <Link href={`/archives/${item.id}`} className="link-light">
-              {item.title?.[locale] || item.quoteContent?.[locale]}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </Card>
-  );
-}
-
-function RecommendedPostsSkeleton({
-  title,
-  label,
-}: {
-  title: string;
-  label: string;
-}) {
-  return (
-    <div role="status" aria-label={label} aria-busy="true">
-      <Card
-        title={
-          <Skeleton
-            aria-hidden="true"
-            className={`inline-block h-5 rounded-sm bg-auto-front-gray/10 align-middle ${
-              title.length <= 8 ? "w-20" : "w-32"
-            }`}
-          />
-        }
-      >
-        <ul aria-hidden="true" className="leading-5 ml-4 mt-2 list-none">
-          <li className="my-2">
-            <div className="space-y-1">
-              <Skeleton className="h-4 w-11/12 rounded-sm bg-auto-front-gray/10 max-md:w-full" />
-              <Skeleton className="hidden h-4 w-3/5 rounded-sm bg-auto-front-gray/10 max-md:block" />
-            </div>
-          </li>
-          <li className="my-2">
-            <div className="space-y-1">
-              <Skeleton className="h-4 w-11/12 rounded-sm bg-auto-front-gray/10 max-md:w-full" />
-              <Skeleton className="hidden h-4 w-3/5 rounded-sm bg-auto-front-gray/10 max-md:block" />
-            </div>
-          </li>
-          <li className="my-2">
-            <div className="space-y-1">
-              <Skeleton className="h-4 w-7/12 rounded-sm bg-auto-front-gray/10 max-md:w-full" />
-              <Skeleton className="hidden h-4 w-1/4 rounded-sm bg-auto-front-gray/10 max-md:block" />
-            </div>
-          </li>
-        </ul>
-      </Card>
-    </div>
-  );
 }
 
 /**

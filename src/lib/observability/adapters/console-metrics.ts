@@ -51,7 +51,9 @@ function writeMetric(
 ): void {
   write(
     JSON.stringify({
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(
+        performance.timeOrigin + performance.now(),
+      ).toISOString(),
       type: "metric",
       name,
       operation,
