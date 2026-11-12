@@ -5,6 +5,9 @@ type RscPayload = {
   path: string;
   headers: Record<string, string>;
   body: string;
+  pendingChunks: string[];
+  streamingStarted: boolean;
+  streamUnavailable?: boolean;
   status?: number;
   completed: boolean;
   error?: string;
@@ -30,6 +33,8 @@ async function captureRscPayloads(page: Page) {
       path,
       headers,
       body: "",
+      pendingChunks: [],
+      streamingStarted: false,
       completed: false,
     };
     requests.set(requestId, payload);
@@ -40,23 +45,41 @@ async function captureRscPayloads(page: Page) {
     const payload = requests.get(requestId);
     if (!payload) return;
     payload.status = response.status;
+    void session
+      .send("Network.streamResourceContent", { requestId })
+      .then(({ bufferedData }) => {
+        payload.body += Buffer.from(bufferedData, "base64").toString("utf8");
+        payload.streamingStarted = true;
+        payload.body += payload.pendingChunks.join("");
+        payload.pendingChunks = [];
+      })
+      .catch((error: unknown) => {
+        payload.error = String(error);
+        payload.streamUnavailable = true;
+        payload.streamingStarted = true;
+        payload.body += payload.pendingChunks.join("");
+        payload.pendingChunks = [];
+        if (payload.completed) readCompletedResponse(requestId, payload);
+      });
+  });
+
+  session.on("Network.dataReceived", ({ requestId, data }) => {
+    if (!data) return;
+    const payload = requests.get(requestId);
+    if (!payload) return;
+    const chunk = Buffer.from(data, "base64").toString("utf8");
+    if (payload.streamingStarted) {
+      payload.body += chunk;
+    } else {
+      payload.pendingChunks.push(chunk);
+    }
   });
 
   session.on("Network.loadingFinished", ({ requestId }) => {
     const payload = requests.get(requestId);
     if (!payload) return;
-    void session
-      .send("Network.getResponseBody", { requestId })
-      .then(({ body, base64Encoded }) => {
-        payload.body = base64Encoded
-          ? Buffer.from(body, "base64").toString("utf8")
-          : body;
-        payload.completed = true;
-      })
-      .catch((error: unknown) => {
-        payload.error = String(error);
-        payload.completed = true;
-      });
+    payload.completed = true;
+    if (payload.streamUnavailable) readCompletedResponse(requestId, payload);
   });
 
   session.on("Network.loadingFailed", ({ requestId, errorText }) => {
@@ -65,6 +88,19 @@ async function captureRscPayloads(page: Page) {
     payload.error = errorText;
     payload.completed = true;
   });
+
+  function readCompletedResponse(requestId: string, payload: RscPayload) {
+    void session
+      .send("Network.getResponseBody", { requestId })
+      .then(({ body, base64Encoded }) => {
+        payload.body = base64Encoded
+          ? Buffer.from(body, "base64").toString("utf8")
+          : body;
+      })
+      .catch((error: unknown) => {
+        payload.error = `${payload.error ?? ""}; response body fallback: ${String(error)}`;
+      });
+  }
 
   return payloads;
 }
