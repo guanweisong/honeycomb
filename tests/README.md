@@ -89,6 +89,8 @@ macOS 上的本地提交钩子和此命令共用规范化的临时目录设置�
 
 E2E 的显式临时目录初始化、凭据隔离及清理契约见 [README 的 E2E 说明](../README.md#可用脚本)。包命令的 `scripts/e2e-preflight.ts` 只做参数和报告目的地预检，不替代现有 CI 生命周期或 Playwright 服务管理。普通筛选与诊断参数保持可用；配置、输出、源码更新及自定义 reporter 覆盖被拒绝。`--list` / `--help` 使用 stdout，不初始化数据库或启动服务。
 
+macOS 本地开发 E2E 若在测试启动前遇到 Turbopack `unable to start FSEvent stream`，该次运行没有验证浏览器用例；保留原有文件监听配置和服务隔离，在 PR 的 Linux `high_risk_development_e2e` 检查中完成验证，并在交付时注明本地 E2E 未运行。
+
 [`quality`](../.github/workflows/quality.yml) 在 PR 和推送到 `master` 时运行。始终执行规格检查、类型检查、Lint、迁移治理、六个串行进程级套件、工作流契约测试、生产依赖审计和生产构建。普通改动有测试目标时运行相关测试，高风险改动运行完整普通单元和集成测试及开发 E2E。生产 E2E 由[路径分类脚本](../scripts/classify-quality-changes.sh)单独判定，例如依赖、PWA 和 E2E 工具链改动。测试分组以 [`vitest-test-groups.mts`](../vitest-test-groups.mts) 为准。
 
 [`quality-full`](../.github/workflows/quality-full.yml) 每日定时运行，也可手动触发。它将普通单元和集成测试分到两个独立覆盖率 shard，每个文件执行一次。`vitest.shard.config.mts` 继承完整测试清单、覆盖率分母和隔离配置，将阈值检查延后到合并阶段。`coverage_gate` 必须取得两个指定 blob，合并后执行全部全局和关键文件阈值；缺片、测试失败或合并失败都不能通过 `verify`。分片必须把未导入源码纳入分母。

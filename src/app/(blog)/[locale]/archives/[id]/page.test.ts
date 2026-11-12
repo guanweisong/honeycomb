@@ -205,9 +205,7 @@ describe("archives page", () => {
       params: Promise.resolve({ id: detail.id, locale: "zh" }),
       searchParams: Promise.resolve({}),
     });
-    const content = React.Children.toArray(
-      route.props.children,
-    )[1] as React.ReactElement;
+    const content = route.props.children as React.ReactElement;
     return (content.type as (props: unknown) => Promise<React.ReactNode>)(
       content.props,
     );
@@ -236,9 +234,7 @@ describe("archives page", () => {
         params: Promise.resolve({ id: articleDetail.id, locale }),
         searchParams: Promise.resolve({}),
       });
-      const content = React.Children.toArray(
-        route.props.children,
-      )[1] as React.ReactElement;
+      const content = route.props.children as React.ReactElement;
       const rendered = (
         content.type as (props: unknown) => Promise<React.ReactNode>
       )(content.props);

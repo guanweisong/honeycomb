@@ -18,6 +18,7 @@ import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { BookOpen, Calendar, Camera } from "lucide-react";
 import { Metadata } from "next";
 import { createServerClient } from "@/app/trpc/server";
+import { getCachedMetadataSettings } from "@/app/(blog)/lib/metadata-settings";
 import { MenuType } from "@/features/menu/types/menu.type";
 import { PostType } from "@/features/post/types/post.type";
 import { RichText } from "@/app/(blog)/components/features/media/public/RichText";
@@ -30,13 +31,9 @@ import {
   getPostTitle,
   handlePostDetailError,
 } from "@/app/(blog)/[locale]/archives/[id]/page.utils";
-import {
-  createContentMetadata,
-  DynamicMetadataMarker,
-} from "@/app/(blog)/lib/metadata";
+import { createContentMetadata } from "@/app/(blog)/lib/metadata";
 import LoadingState from "@/components/LoadingState";
 import { assertDetailId } from "@/app/(blog)/lib/assert-detail-id";
-import { connection } from "next/server";
 import { cacheLife, cacheTag, prefetch } from "next/cache";
 import {
   POST_DETAILS_CACHE_TAG,
@@ -70,12 +67,9 @@ async function getPrefetchedPostDetail(id: string) {
  */
 export default function Archives(props: PageProps<"/[locale]/archives/[id]">) {
   return (
-    <>
-      <Suspense fallback={null}>
-        <DynamicMetadataMarker />
-      </Suspense>
+    <Suspense fallback={null}>
       <ArchiveContent {...props} />
-    </>
+    </Suspense>
   );
 }
 
@@ -245,16 +239,14 @@ async function getRecommendedPosts(categoryId: string, postId: string) {
 export async function generateMetadata(
   props: PageProps<"/[locale]/archives/[id]">,
 ): Promise<Metadata> {
-  await connection();
   const { id, locale: rawLocale } = await props.params;
   assertDetailId(id);
-  const trpc = await createServerClient();
-  let setting: Awaited<ReturnType<typeof trpc.setting.index>>;
   let postDetail: Awaited<ReturnType<typeof getPrefetchedPostDetail>>;
+  let setting: Awaited<ReturnType<typeof getCachedMetadataSettings>>;
   try {
-    [setting, postDetail] = await Promise.all([
-      trpc.setting.index(),
+    [postDetail, setting] = await Promise.all([
       getPrefetchedPostDetail(id),
+      getCachedMetadataSettings(),
     ]);
     postDetail = assertPostDetail(postDetail);
   } catch (error) {

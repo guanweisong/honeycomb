@@ -1,3 +1,4 @@
+import React, { Suspense } from "react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import { clientEnv } from "@/env/client";
@@ -11,19 +12,19 @@ import { setRequestLocale } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { NextIntlClientProvider } from "next-intl";
 import { Analytics } from "@vercel/analytics/next";
-import { defaultSocialImage } from "@/app/(blog)/lib/metadata";
-import { createServerClient } from "@/app/trpc/server";
+import {
+  defaultSocialImage,
+  DynamicMetadataMarker,
+} from "@/app/(blog)/lib/metadata";
+import { getCachedMetadataSettings } from "@/app/(blog)/lib/metadata-settings";
 import { Toaster } from "@/components/ui/sonner";
-import { connection } from "next/server";
 
 export async function generateMetadata({
   params,
 }: LayoutProps<"/[locale]">): Promise<Metadata> {
-  await connection();
   const { locale: rawLocale } = await params;
   const locale = normalizeMultiLangLocale(rawLocale);
-  const trpc = await createServerClient();
-  const setting = await trpc.setting.index();
+  const setting = await getCachedMetadataSettings();
   const siteName = setting?.siteName?.[locale] ?? "Honeycomb";
   const siteSubName =
     setting?.siteSubName?.[locale] ?? "Honeycomb content management system";
@@ -68,6 +69,9 @@ export default async function LocaleLayout({
         <meta name="theme-color" content="#FFFFFF" />
       </head>
       <body>
+        <Suspense fallback={null}>
+          <DynamicMetadataMarker />
+        </Suspense>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
