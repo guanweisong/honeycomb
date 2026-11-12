@@ -8,7 +8,7 @@
 
 ### Requirement: 每个面向用户的 App Router 目标都提供即时且安全的页面外壳
 
-所有可通过客户端导航访问的公开博客和后台路由 MUST 渲染静态或缓存的页面外壳，以便导航时立即显示。对于构建时已发布并由详情路由生成的文章和独立页面，直接刷新时的首个预渲染输出 MUST 同时包含共享 Header、对应正文和 Footer；这些内容 MUST NOT 先以只有头尾的空壳显示，再由正文撑开布局。构建时未枚举的文章或页面 ID MUST 仍可在运行时解析，首次完整响应 MUST 等待详情正文准备好后再输出共享页面，后续请求可复用已缓存结果。其他请求时 API、依赖路由的未缓存读取和授权检查 MUST 放在路由局部的 Suspense 边界后；文章详情页的猜你喜欢查询遵循下一 Requirement 所述例外。应用 MUST NOT 使用 `instant = false` 让路由避开即时导航验证。fallback MUST NOT 暴露后台私有内容或绕过授权。
+所有可通过客户端导航访问的公开博客和后台路由 MUST 渲染静态或缓存的页面外壳，以便导航时立即显示。对于构建时已发布并由详情路由生成的文章和独立页面，直接刷新时的首个预渲染输出 MUST 同时包含共享 Header、对应正文和 Footer；这些内容 MUST NOT 先以只有头尾的空壳显示，再由正文撑开布局。构建时未枚举的文章或页面 ID MUST 仍可在运行时解析；开发态 MAY 在未枚举参数和正文解析期间显示局部 Suspense fallback，生产环境的完整页面及 URL 预取响应 MUST 包含公开正文或 not-found 结果，后续请求可复用缓存。其他请求时 API、依赖路由的未缓存读取和授权检查 MUST 放在路由局部的 Suspense 边界后；文章详情页的猜你喜欢查询遵循下一 Requirement 所述例外。应用 MUST NOT 使用 `instant = false` 让路由避开即时导航验证。fallback MUST NOT 暴露后台私有内容或绕过授权。
 
 #### Scenario: 刷新构建时已生成的公开详情
 
@@ -18,7 +18,7 @@
 #### Scenario: 首次访问构建时未列出的公开详情 ID
 
 - **WHEN** 访客直接刷新或导航访问构建时未生成的文章或页面 ID
-- **THEN** 路由在首次完整响应前解析 URL 和公开详情，输出包含详情正文的共享页面；后续访问复用缓存
+- **THEN** 开发态路由可以通过局部 Suspense 解析 URL 参数；生产环境完整页面及 URL 预取响应包含详情正文或 not-found，后续访问复用缓存
 
 #### Scenario: 后台页面的请求级检查尚未完成
 
@@ -86,7 +86,7 @@
 
 ### Requirement: 动态语言和内容参数无需完整构建时枚举
 
-根 `[locale]` 和列表 slug MUST NOT 依赖 `generateStaticParams()` 枚举完整参数。文章归档 ID 与独立页面 ID MAY 使用 `generateStaticParams()` 预生成构建时已发布内容的路径；该枚举 MUST 使用已发布内容的轻量 ID 投影，并生成全部支持语言的路径。文章和页面详情路由 MUST NOT 将完整 ID 枚举作为路由正确性的前提；构建后新增或未枚举的 ID MUST 仍可在运行时解析。空内容时，生成器 MUST 按 Cache Components 非空参数要求返回不会暴露内容的无效占位 ID，并由既有 ID 校验处理为 not-found。列表等页面 MUST 在需要运行时解析参数或数据时保留局部 Suspense 边界，使共享静态页面外壳可复用。文章和独立页面详情路由 MUST 在顶层等待 URL 与公开正文解析完成，使直接刷新不会先输出缺少正文的共享页面外壳。
+根 `[locale]` 和列表 slug MUST NOT 依赖 `generateStaticParams()` 枚举完整参数。文章归档 ID 与独立页面 ID MAY 使用 `generateStaticParams()` 预生成构建时已发布内容的路径；该枚举 MUST 使用已发布内容的轻量 ID 投影，并生成全部支持语言的路径。文章和页面详情路由 MUST NOT 将完整 ID 枚举作为路由正确性的前提；构建后新增或未枚举的 ID MUST 仍可在运行时解析。空内容时，生成器 MUST 按 Cache Components 非空参数要求返回不会暴露内容的无效占位 ID，并由既有 ID 校验处理为 not-found。列表详情路由 MUST 在需要运行时解析参数或数据时保留局部 Suspense 边界，使共享静态页面外壳可复用；文章和独立页面详情路由 MAY 在开发态对未枚举参数保留局部 Suspense 边界。详情路由在构建时已生成的公开 ID MUST 在预渲染输出中包含正文；未枚举 ID MUST 可在运行时解析，生产环境完整页面及 URL 预取响应 MUST 包含正文或 not-found。
 
 #### Scenario: 构建当前已发布详情路径
 
@@ -96,7 +96,7 @@
 #### Scenario: 构建后访问新增详情 ID
 
 - **WHEN** 访客访问未在构建参数中列出的文章或页面 ID
-- **THEN** 路由仍在运行时解析该 ID，并在完整响应中呈现公开内容或 not-found；后续访问可复用运行时生成的缓存结果
+- **THEN** 路由仍在运行时解析该 ID，完整页面响应呈现公开内容或 not-found；URL 预取完成后包含正文，后续访问可复用运行时生成的缓存结果
 
 #### Scenario: 构建时没有已发布详情
 

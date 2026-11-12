@@ -71,7 +71,11 @@ async function getPrefetchedPostDetail(id: string) {
  * @returns {Promise<JSX.Element>} 归档页面。
  */
 export default function Archives(props: PageProps<"/[locale]/archives/[id]">) {
-  return <ArchiveContent {...props} />;
+  const content = <ArchiveContent {...props} />;
+  if (process.env.NODE_ENV === "development") {
+    return <Suspense fallback={null}>{content}</Suspense>;
+  }
+  return content;
 }
 
 async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
