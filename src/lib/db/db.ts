@@ -15,7 +15,7 @@ export type Database = LibSQLDatabase<typeof schema>;
  * 获取数据库实例（lazy init）
  *
  * - 不允许在模块顶层创建 client
- * - 只在 runtime（API 请求）阶段执行
+ * - 仅从显式服务端入口调用，包括运行时请求和详情路径构建参数生成
  */
 export function getDb() {
   if (!db) {

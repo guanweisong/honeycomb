@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-11-12
+goal: Make deployed blog detail pages immediately available from build output
+  without requiring complete route enumeration.

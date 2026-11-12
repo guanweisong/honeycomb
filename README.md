@@ -150,7 +150,7 @@ UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_rest_token
 CSP_REPORT_ONLY=true
 ```
 
-生产启动时会校验核心变量和已启用集成的完整性；缺失、空值或 URL/邮箱格式错误会让进程立即失败。错误信息只列出变量名和原因，不回显秘密值。`next build` 阶段不会连接数据库，也不会执行生产启动校验。
+生产启动时会校验核心变量和已启用集成的完整性；缺失、空值或 URL/邮箱格式错误会让进程立即失败。错误信息只列出变量名和原因，不回显秘密值。`next build` 不执行生产启动校验；文章与独立页面详情的 `generateStaticParams` 会在构建时读取已发布内容 ID，因此构建环境必须配置可访问数据库的 `TURSO_URL` 和 `TURSO_TOKEN`。CI 构建使用独占本地 fixture。
 
 R2、Turnstile、Resend、OAuth Provider 与 Upstash 是可选集成：完全不配置即关闭；一旦配置其中一项，就必须补齐同组变量。生产环境中，Upstash 缺失、超时或故障时，通用 API 代理会 fail-open 放行请求以保持可用；评论创建等具有独立限流的入口仍会 fail-closed 拒绝请求，返回 `503`。生产部署应完整配置 Upstash，以启用通用 API 限流和这些受保护的写入入口。
 
@@ -409,7 +409,7 @@ configureObservability({ logger, metrics });
 
 ## Sitemap 运行时策略
 
-`/sitemap.xml` 在请求时生成 sitemap 索引。文章与页面各按 `MAX_PAGE_SIZE`（当前 100 条）分页读取，每条生成中英文 URL。首片另含静态入口及按真实祖先链生成的分类 URL。索引的分片数量和各分片内容缓存 5 分钟。数据库读取失败时，索引只列出首片链接，分片端点返回站点首页及中英文分类入口。应用构建无需数据库，动态内容可在数据库恢复并刷新缓存后重新出现。
+`/sitemap.xml` 在请求时生成 sitemap 索引。文章与页面各按 `MAX_PAGE_SIZE`（当前 100 条）分页读取，每条生成中英文 URL。首片另含静态入口及按真实祖先链生成的分类 URL。索引的分片数量和各分片内容缓存 5 分钟。数据库读取失败时，索引只列出首片链接，分片端点返回站点首页及中英文分类入口。Sitemap 动态内容不参与构建；文章和页面详情的构建参数仍会读取已发布 ID，所用数据库不可用时构建会失败。
 
 ## 部署
 

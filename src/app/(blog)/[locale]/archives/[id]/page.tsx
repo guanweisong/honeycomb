@@ -39,6 +39,11 @@ import {
   POST_DETAILS_CACHE_TAG,
   postDetailCacheTag,
 } from "@/lib/cache/public-cache-keys";
+import { getPublishedPostDetailStaticParams } from "@/app/(blog)/lib/server/detail-static-params";
+
+export function generateStaticParams() {
+  return getPublishedPostDetailStaticParams();
+}
 
 async function getPrefetchedPostDetail(id: string) {
   "use cache";
