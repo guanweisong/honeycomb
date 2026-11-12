@@ -104,7 +104,11 @@ async function expectPrefetchedBody(
               candidate.body.includes(expectedText) &&
               (!options.additionalText ||
                 candidate.body.includes(options.additionalText)) &&
-              (!options.completed || candidate.completed),
+              (!options.completed ||
+                (candidate.completed &&
+                  candidate.status !== undefined &&
+                  candidate.status >= 200 &&
+                  candidate.status < 300)),
           );
         return payload !== undefined;
       })
@@ -165,12 +169,40 @@ test.describe("blog detail body prefetch", () => {
       completed: true,
     });
 
-    await link.click();
+    let navigationResponseReleased = false;
+    let releaseNavigationResponse: (() => void) | undefined;
+    await page.route("**/*", async (route) => {
+      const request = route.request();
+      const headers = request.headers();
+      if (
+        new URL(request.url()).pathname === href &&
+        headers.rsc === "1" &&
+        !headers["next-router-prefetch"] &&
+        !navigationResponseReleased
+      ) {
+        await new Promise<void>((resolve) => {
+          releaseNavigationResponse = resolve;
+        });
+      }
+      await route.continue();
+    });
+
+    const navigation = link.click();
+    navigation.catch(() => undefined);
+    try {
+      await expect(page.locator("main .prose-editor").first()).toContainText(
+        bodyText,
+        { timeout: 2000 },
+      );
+      await expect(page.locator("main")).toContainText(
+        recommendationHeading,
+      );
+    } finally {
+      navigationResponseReleased = true;
+      releaseNavigationResponse?.();
+    }
+    await navigation;
     await expect(page).toHaveURL(href);
-    await expect(page.locator("main .prose-editor").first()).toContainText(
-      bodyText,
-    );
-    await expect(page.locator("main")).toContainText(recommendationHeading);
   });
 
   test("@production prefetches the public page body from the menu", async ({
