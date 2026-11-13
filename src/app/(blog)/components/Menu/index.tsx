@@ -9,6 +9,7 @@ import {
 } from "@/app/(blog)/lib/category-route";
 import { cn } from "cn";
 import { trpc } from "@/lib/trpc/client/trpc";
+import { useMounted } from "@/lib/hooks/use-mounted";
 import { BlogNavigationLink } from "@/app/(blog)/types/blog-navigation-link";
 import type { MenuNavigationItem } from "@/app/(blog)/types/menu-navigation-item";
 
@@ -66,6 +67,15 @@ const getActiveCategories = ({
  * @returns {JSX.Element} 导航菜单。
  */
 const Menu = (props: MenuProps) => {
+  const mounted = useMounted();
+  return mounted ? (
+    <InteractiveMenu {...props} />
+  ) : (
+    <MenuFallback data={props.data} />
+  );
+};
+
+const InteractiveMenu = (props: MenuProps) => {
   const { data, flatMenuData } = props;
   const ref1 = useRef<HTMLUListElement>(null);
   const ref2 = useRef<HTMLButtonElement>(null);
@@ -198,5 +208,39 @@ const Menu = (props: MenuProps) => {
     </div>
   );
 };
+
+function MenuFallback({ data }: { data: BlogNavigationLink[] }) {
+  return (
+    <div className="flex h-full">
+      <div
+        aria-hidden="true"
+        className="w-9 px-2 lg:hidden absolute left-0 top-[50%] -translate-y-1/2"
+      >
+        <div className="h-0.5 my-1 bg-gray-500" />
+        <div className="h-0.5 my-1 bg-gray-500" />
+        <div className="h-0.5 my-1 bg-gray-500" />
+      </div>
+      <ul
+        role="navigation"
+        aria-label="Main navigation"
+        className="absolute backdrop-blur bg-auto-back-gray/80 hidden lg:static lg:flex py-2 lg:py-0 lg:px-2 lg:rounded-full"
+      >
+        {data.map((item, index) => (
+          <li
+            key={`${item.link}-${index}`}
+            className="relative group lg:flex lg:items-center"
+          >
+            <Link
+              href={item.link ?? ""}
+              className="lg:relative leading-10 lg:z-20 px-4 lg:flex lg:items-center"
+            >
+              {item.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 
 export default Menu;

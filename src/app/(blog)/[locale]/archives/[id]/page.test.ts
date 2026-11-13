@@ -210,8 +210,66 @@ describe("archives page", () => {
     );
   }
 
+  function getRecommendationsBoundary(page: React.ReactNode) {
+    const pageElement = page as React.ReactElement<{
+      children?: React.ReactNode;
+    }>;
+    return React.Children.toArray(pageElement.props.children).find(
+      isRecommendationsBoundary,
+    );
+  }
+
+  function isRecommendationsBoundary(
+    child: React.ReactNode,
+  ): child is React.ReactElement<{
+    children: React.ReactElement<Record<string, unknown>>;
+    fallback: React.ReactNode;
+  }> {
+    if (!React.isValidElement(child) || child.type !== React.Suspense)
+      return false;
+    const recommendation = (
+      child.props as { children?: React.ReactNode }
+    ).children;
+    return (
+      React.isValidElement(recommendation) &&
+      typeof recommendation.type === "function" &&
+      recommendation.type.name === "RecommendedPosts"
+    );
+  }
+
+  async function renderRecommendations(
+    boundary: ReturnType<typeof getRecommendationsBoundary>,
+  ) {
+    if (!boundary) throw new Error("Expected a recommendations boundary");
+    const component = boundary.props.children.type as unknown as (
+      props: Record<string, unknown>,
+    ) => Promise<React.ReactNode>;
+    return component(boundary.props.children.props);
+  }
+
+  function replaceRecommendations(
+    page: React.ReactNode,
+    replacement: React.ReactNode,
+  ) {
+    const pageElement = page as React.ReactElement<{
+      children?: React.ReactNode;
+    }>;
+    const children = React.Children.toArray(pageElement.props.children);
+    const index = children.findIndex(isRecommendationsBoundary);
+    if (index === -1) throw new Error("Expected a recommendations boundary");
+    if (replacement == null || typeof replacement === "boolean") {
+      children.splice(index, 1);
+    } else {
+      children[index] = replacement;
+    }
+    return React.cloneElement(pageElement, undefined, children);
+  }
+
   async function renderArchive(detail: DetailFixture) {
-    const element = await archiveContent(detail);
+    const page = await archiveContent(detail);
+    const boundary = getRecommendationsBoundary(page);
+    const recommendations = await renderRecommendations(boundary);
+    const element = replaceRecommendations(page, recommendations);
     await act(async () => root.render(element));
   }
 
@@ -296,7 +354,7 @@ describe("archives page", () => {
     expect(mockComments).not.toHaveBeenCalled();
     expect(container.textContent).not.toContain("3 comments");
   });
-  it("waits for recommendations before rendering the article", async () => {
+  it("renders article content while recommendations remain in their prefetch boundary", async () => {
     let resolveRecommendations!: (
       posts: { id: string; title: { zh: string } }[],
     ) => void;
@@ -316,19 +374,38 @@ describe("archives page", () => {
         pageContentSettled = true;
       },
     );
+    const page = await pending;
+    expect(pageContentSettled).toBe(true);
+    expect(mockRandomPosts).not.toHaveBeenCalled();
+    const boundary = getRecommendationsBoundary(page);
+    expect(boundary?.props.fallback).toBeNull();
+
+    const recommendationsPending = renderRecommendations(boundary);
+    let recommendationsSettled = false;
+    void recommendationsPending.then(
+      () => {
+        recommendationsSettled = true;
+      },
+      () => {
+        recommendationsSettled = true;
+      },
+    );
     await vi.waitFor(() => expect(mockPrefetch).toHaveBeenCalledOnce());
     await vi.waitFor(() => expect(mockRandomPosts).toHaveBeenCalledOnce());
     expect(mockCreateServerClient).toHaveBeenCalledWith({
       requestContext: { requestId: "public-recommendation-prefetch" },
       skipRequestObservability: true,
     });
-    expect(pageContentSettled).toBe(false);
+    expect(recommendationsSettled).toBe(false);
 
     resolveRecommendations([
       { id: "111111111111111111111111", title: { zh: "当前文章" } },
       { id: "222222222222222222222222", title: { zh: "稍后推荐" } },
     ]);
-    const element = await pending;
+    const element = replaceRecommendations(
+      page,
+      await recommendationsPending,
+    );
     await act(async () => root.render(element));
 
     expect(container.querySelector("h1")?.textContent).toBe("文章标题");
@@ -357,10 +434,26 @@ describe("archives page", () => {
       }),
     );
 
-    const pending = archiveContent({ ...articleDetail });
+    const page = await archiveContent({ ...articleDetail });
+    const recommendationsPending = renderRecommendations(
+      getRecommendationsBoundary(page),
+    );
+    let recommendationsSettled = false;
+    void recommendationsPending.then(
+      () => {
+        recommendationsSettled = true;
+      },
+      () => {
+        recommendationsSettled = true;
+      },
+    );
     await vi.waitFor(() => expect(mockRandomPosts).toHaveBeenCalledOnce());
+    expect(recommendationsSettled).toBe(false);
     rejectRecommendations(new Error("Recommendations unavailable"));
-    const element = await pending;
+    const element = replaceRecommendations(
+      page,
+      await recommendationsPending,
+    );
     await act(async () => root.render(element));
 
     expect(container.querySelector("h1")?.textContent).toBe("文章标题");

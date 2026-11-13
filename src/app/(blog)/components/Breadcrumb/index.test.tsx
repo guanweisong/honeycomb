@@ -4,13 +4,18 @@ import { MenuType } from "@/features/menu/types/menu.type";
 import React from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 let locale = "zh";
 let segments = ["list", "category/parent/child"];
+let prerendering = false;
 
 vi.mock("next/navigation", () => ({
-  useSelectedLayoutSegments: () => segments,
+  useSelectedLayoutSegments: () => {
+    if (prerendering) throw new Error("Route hooks are client-only");
+    return segments;
+  },
 }));
 
 vi.mock("next-intl", () => ({
@@ -78,6 +83,15 @@ describe("Breadcrumb", () => {
     root = createRoot(container);
     act(() => root.render(<Breadcrumb menu={items} />));
   };
+
+  it("defers route-dependent breadcrumbs during prerendering", () => {
+    prerendering = true;
+    try {
+      expect(renderToStaticMarkup(<Breadcrumb menu={menu} />)).toBe("");
+    } finally {
+      prerendering = false;
+    }
+  });
 
   it("renders localized links and current item for nested categories", () => {
     render();

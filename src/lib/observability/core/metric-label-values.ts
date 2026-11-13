@@ -50,6 +50,8 @@ export const databaseQueryNames = [
   "post.create",
   "post.destroy",
   "post.increment-views",
+  "post.public-list-path-ids.authors",
+  "post.public-list-path-ids.tags",
   "post.random-by-category",
   "post.search",
   "post.service.category-tree",

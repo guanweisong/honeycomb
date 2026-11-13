@@ -1,6 +1,7 @@
 import React, { type ReactNode } from "react";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -18,6 +19,7 @@ const mocks = vi.hoisted(() => ({
       }
     | undefined,
   linkKind: undefined as "intl" | undefined,
+  prerendering: false,
 }));
 
 vi.mock("next-intl", () => ({
@@ -36,7 +38,10 @@ vi.mock("next/image", () => ({
 }));
 
 vi.mock("@/app/(blog)/lib/blog-navigation", () => ({
-  usePathname: () => mocks.pathname,
+  usePathname: () => {
+    if (mocks.prerendering) throw new Error("Route hooks are client-only");
+    return mocks.pathname;
+  },
   Link: ({
     children,
     href,
@@ -94,6 +99,12 @@ describe("LanguageSwitcher", () => {
     mocks.resolvedTheme = "light";
     mocks.linkProps = undefined;
     mocks.linkKind = undefined;
+    mocks.prerendering = false;
+  });
+
+  it("does not read route state before the client mounts", () => {
+    mocks.prerendering = true;
+    expect(renderToStaticMarkup(<LanguageSwitcher />)).toBe("");
   });
 
   it("waits for client mounting before rendering the switcher", () => {

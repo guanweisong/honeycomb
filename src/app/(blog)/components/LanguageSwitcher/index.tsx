@@ -20,24 +20,20 @@ import { useMounted } from "@/lib/hooks/use-mounted";
  * @returns {JSX.Element | null} 语言切换按钮或 null。
  */
 const LanguageSwitcher = () => {
+  const mounted = useMounted();
+  return mounted ? <MountedLanguageSwitcher /> : null;
+};
+
+function MountedLanguageSwitcher() {
   const locale = normalizeMultiLangLocale(useLocale());
   const pathname = usePathname();
   const { resolvedTheme } = useTheme();
-  /**
-   * 组件是否已挂载。
-   * 用于解决 `next-themes` 在服务器端渲染时的 `resolvedTheme` 不匹配问题。
-   */
-  const mounted = useMounted();
 
   /**
    * 另一个语言环境。
    */
   const otherLocale =
     locale === MultiLangEnum.En ? MultiLangEnum.Zh : MultiLangEnum.En;
-
-  if (!mounted) {
-    return null;
-  }
 
   /**
    * 根据当前主题和语言环境选择对应的语言图标。

@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import {
+  databaseQueryNames,
   databaseOperations,
   externalServices,
   externalServiceOperations,
@@ -8,6 +9,13 @@ import {
 } from "@/lib/observability/core/metric-label-values";
 
 describe("metric operation catalogs", () => {
+  it("allows the published-list path projection operations", () => {
+    expect(databaseQueryNames).toContain(
+      "post.public-list-path-ids.authors",
+    );
+    expect(databaseQueryNames).toContain("post.public-list-path-ids.tags");
+  });
+
   it("retains the complete operation allowlist and its insertion order", () => {
     expect([...metricLabelValueCatalog.operation]).toEqual([
       "select",

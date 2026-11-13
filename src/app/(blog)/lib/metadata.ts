@@ -1,4 +1,3 @@
-import { connection } from "next/server";
 import type { Metadata } from "next";
 import type { MultiLangEnum } from "@/lib/i18n/multi-lang";
 
@@ -15,11 +14,6 @@ export function createLocalizedAlternates(
       zh: `/zh${path}`,
     },
   };
-}
-
-export async function DynamicMetadataMarker() {
-  await connection();
-  return null;
 }
 
 export function createContentMetadata({

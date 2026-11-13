@@ -1,6 +1,7 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
+import { renderToStaticMarkup } from "react-dom/server";
 import { NextIntlClientProvider } from "next-intl";
 import enMessages from "@/app/(blog)/messages/en.json";
 import zhMessages from "@/app/(blog)/messages/zh.json";
@@ -10,6 +11,8 @@ import zhMessages from "@/app/(blog)/messages/zh.json";
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
 const fetches: string[] = [];
+let prerendering = false;
+let queryHookCalls = 0;
 const fetchOptions: Array<{ cancelRefetch: boolean } | undefined> = [];
 const observers: Array<{
   callback: (entries: Array<{ isIntersecting: boolean }>) => void;
@@ -50,15 +53,19 @@ vi.mock("next/image", () => ({
 }));
 
 vi.mock("@/app/(blog)/components/features/post/public/use-post-list", () => ({
-  default: () => ({
-    ...listState,
-    fetchNextPage: (options?: { cancelRefetch: boolean }) => {
-      fetches.push("next");
-      fetchOptions.push(options);
-      return Promise.resolve();
-    },
-    refetch: () => fetches.push("refetch"),
-  }),
+  default: () => {
+    queryHookCalls += 1;
+    if (prerendering) throw new Error("Client query hooks must not run at build time");
+    return {
+      ...listState,
+      fetchNextPage: (options?: { cancelRefetch: boolean }) => {
+        fetches.push("next");
+        fetchOptions.push(options);
+        return Promise.resolve();
+      },
+      refetch: () => fetches.push("refetch"),
+    };
+  },
 }));
 
 vi.mock("next-intl/navigation", () => ({
@@ -134,6 +141,7 @@ describe("PostList", () => {
     document.body.appendChild(container);
     root = createRoot(container);
     fetches.length = 0;
+    queryHookCalls = 0;
     fetchOptions.length = 0;
     observers.length = 0;
     vi.stubGlobal(
@@ -197,6 +205,29 @@ describe("PostList", () => {
     expect(links).toHaveLength(3);
     for (const link of links)
       expect(link.getAttribute("data-prefetch")).toBe("true");
+  });
+
+  it("renders initial cards without calling the client query during prerender", () => {
+    prerendering = true;
+    try {
+      const html = renderToStaticMarkup(
+        <NextIntlClientProvider
+          locale="zh"
+          messages={zhMessages}
+          timeZone="UTC"
+        >
+          <PostList
+            queryParams={{ limit: 10 }}
+            initialData={{ list: posts, total: posts.length, nextCursor: null }}
+          />
+        </NextIntlClientProvider>,
+      );
+
+      expect(html).toContain("文章标题");
+      expect(queryHookCalls).toBe(0);
+    } finally {
+      prerendering = false;
+    }
   });
 
   it.each([

@@ -1,7 +1,6 @@
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
-import { PostListSkeleton } from "@/app/(blog)/components/features/post/public/components/PostList/Skeleton";
 
 (
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -14,6 +13,7 @@ const mockMenuIndex = vi.fn();
 const mockTagIndex = vi.fn();
 const mockUserDetail = vi.fn();
 const mockPostIndex = vi.fn();
+const mockPublishedPostListStaticParams = vi.fn();
 
 vi.mock("next-intl/server", () => ({
   getLocale: () => mockGetLocale(),
@@ -22,6 +22,10 @@ vi.mock("next-intl/server", () => ({
 vi.mock("next/cache", () => ({
   cacheLife: vi.fn(),
   cacheTag: vi.fn(),
+}));
+vi.mock("@/app/(blog)/lib/server/list-static-params", () => ({
+  getPublishedPostListStaticParams: () =>
+    mockPublishedPostListStaticParams(),
 }));
 
 vi.mock("@/app/trpc/server", () => ({
@@ -60,23 +64,21 @@ vi.mock("@/app/(blog)/[locale]/list/[...slug]/components/NoData", () => ({
 }));
 
 import List, {
+  ensureStatic,
   generateMetadata,
+  generateStaticParams,
 } from "@/app/(blog)/[locale]/list/[...slug]/page";
 import { resolveListContext } from "@/app/(blog)/[locale]/list/[...slug]/page.utils";
 import { createServerClient } from "@/app/trpc/server";
 import { MenuType } from "@/features/menu/types/menu.type";
-import { MultiLangEnum } from "@/lib/i18n/i18n";
+import { MultiLangEnum, supportedLanguages } from "@/lib/i18n/i18n";
 
 vi.mock("next/navigation", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/navigation")>()),
 }));
 
 function renderListContent(props: Parameters<typeof List>[0]) {
-  const boundary = List(props);
-  const content = boundary.props.children;
-  return (
-    content.type as (props: unknown) => Promise<React.ReactNode>
-  )(content.props);
+  return List(props);
 }
 
 describe("blog list page", () => {
@@ -124,6 +126,14 @@ describe("blog list page", () => {
       list: [{ id: "post-1" }],
       total: 1,
     });
+    mockPublishedPostListStaticParams
+      .mockReset()
+      .mockResolvedValue(
+        supportedLanguages.flatMap((locale) => [
+          { locale, slug: ["tags", "published-tag"] },
+          { locale, slug: ["authors", "published-author"] },
+        ]),
+      );
   });
 
   afterEach(async () => {
@@ -131,20 +141,42 @@ describe("blog list page", () => {
     container.remove();
   });
 
-  it("uses the article-list skeleton as the route loading fallback", async () => {
-    const boundary = List({
+  it("requires full static output for generated list URLs", () => {
+    expect(ensureStatic).toBe("navigation");
+  });
+
+  it("prerenders category and published filter paths for every locale", async () => {
+    const params = await generateStaticParams();
+
+    expect(mockMenuIndex).toHaveBeenCalledOnce();
+    expect(mockPublishedPostListStaticParams).toHaveBeenCalledOnce();
+    expect(params).toHaveLength(supportedLanguages.length * 4);
+    for (const locale of supportedLanguages) {
+      expect(params).toContainEqual({ locale, slug: ["category"] });
+      expect(params).toContainEqual({
+        locale,
+        slug: ["category", "tech"],
+      });
+      expect(params).toContainEqual({
+        locale,
+        slug: ["tags", "published-tag"],
+      });
+      expect(params).toContainEqual({
+        locale,
+        slug: ["authors", "published-author"],
+      });
+    }
+  });
+
+  it("waits for list data and returns page content without a Suspense fallback", async () => {
+    const page = await List({
       params: Promise.resolve({ locale: "zh", slug: ["category"] }),
       searchParams: Promise.resolve({}),
     });
-    const fallback = boundary.props.fallback as React.ReactElement;
-    const renderedFallback = await (
-      fallback.type as () => Promise<React.ReactNode>
-    )();
 
-    expect(React.isValidElement(renderedFallback)).toBe(true);
-    const skeleton = renderedFallback as React.ReactElement<{ label: string }>;
-    expect(skeleton.type).toBe(PostListSkeleton);
-    expect(skeleton.props.label).toBe("loading");
+    expect(React.isValidElement(page)).toBe(true);
+    expect(page.type).not.toBe(React.Suspense);
+    expect(mockPostIndex).toHaveBeenCalledOnce();
   });
 
   async function renderList(slug: string[]) {

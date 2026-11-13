@@ -1,13 +1,45 @@
-import { Suspense } from "react";
 import PostList from "@/app/(blog)/components/features/post/public/components/PostList";
 import NoData from "@/app/(blog)/[locale]/list/[...slug]/components/NoData";
 import { getTranslations } from "next-intl/server";
 import { notFound, redirect } from "next/navigation";
 import { Metadata } from "next";
-import { PostListSkeleton } from "@/app/(blog)/components/features/post/public/components/PostList/Skeleton";
 import { createContentMetadata } from "@/app/(blog)/lib/metadata";
+import { getCategoryRouteSegments } from "@/app/(blog)/lib/category-route";
+import { getCachedPublicMenu } from "@/app/(blog)/lib/public-menu";
+import { getPublishedPostListStaticParams } from "@/app/(blog)/lib/server/list-static-params";
 import { resolveListTitle } from "@/app/(blog)/[locale]/list/[...slug]/page.utils";
 import { getCachedListPageData } from "@/app/(blog)/[locale]/list/[...slug]/page.data";
+import { MenuType } from "@/features/menu/types/menu.type";
+import { supportedLanguages } from "@/lib/i18n/i18n";
+
+/** Generated list URLs must render completely during prerendering. */
+export const ensureStatic = "navigation";
+
+export async function generateStaticParams() {
+  const [{ list }, publishedFilterParams] = await Promise.all([
+    getCachedPublicMenu(),
+    getPublishedPostListStaticParams(),
+  ]);
+  const categorySlugs = new Map<string, string[]>([
+    [JSON.stringify(["category"]), ["category"]],
+  ]);
+
+  for (const item of list) {
+    if (item.type !== MenuType.CATEGORY) continue;
+    const slug = [
+      "category",
+      ...getCategoryRouteSegments({ id: item.id, menu: list }),
+    ];
+    categorySlugs.set(JSON.stringify(slug), slug);
+  }
+
+  return [
+    ...supportedLanguages.flatMap((locale) =>
+      [...categorySlugs.values()].map((slug) => ({ locale, slug })),
+    ),
+    ...publishedFilterParams,
+  ];
+}
 
 /**
  * 列表页面组件。
@@ -15,17 +47,24 @@ import { getCachedListPageData } from "@/app/(blog)/[locale]/list/[...slug]/page
  * @param {PageProps<"/[locale]/list/[...slug]">} props - 组件属性。
  * @returns {Promise<JSX.Element>} 文章列表页面。
  */
-export default function List(props: PageProps<"/[locale]/list/[...slug]">) {
-  return (
-    <Suspense fallback={<ListLoadingFallback />}>
-      <ListContent {...props} />
-    </Suspense>
-  );
-}
+export default async function List(
+  props: PageProps<"/[locale]/list/[...slug]">,
+) {
+  const { type, title, emptyLabel, queryParams, listResult, listHasContent } =
+    await getListRouteData(props.params);
 
-async function ListLoadingFallback() {
-  const t = await getTranslations("PostList");
-  return <PostListSkeleton label={t("loading")} />;
+  return (
+    <>
+      {(type === "tags" || type === "authors") && (
+        <div className="mb-2 lg:mb-4">{title}</div>
+      )}
+      {listHasContent ? (
+        <PostList queryParams={queryParams} initialData={listResult} />
+      ) : (
+        <NoData title={emptyLabel} />
+      )}
+    </>
+  );
 }
 
 function getListRouteData(
@@ -54,24 +93,6 @@ function getListRouteData(
       emptyLabel: t("emptyTip"),
     };
   });
-}
-
-async function ListContent(props: PageProps<"/[locale]/list/[...slug]">) {
-  const { type, title, emptyLabel, queryParams, listResult, listHasContent } =
-    await getListRouteData(props.params);
-
-  return (
-    <>
-      {(type === "tags" || type === "authors") && (
-        <div className="mb-2 lg:mb-4">{title}</div>
-      )}
-      {listHasContent ? (
-        <PostList queryParams={queryParams} initialData={listResult} />
-      ) : (
-        <NoData title={emptyLabel} />
-      )}
-    </>
-  );
 }
 
 /**

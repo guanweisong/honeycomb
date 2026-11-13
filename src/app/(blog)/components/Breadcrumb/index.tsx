@@ -5,6 +5,7 @@ import React from "react";
 import { Link } from "@/app/(blog)/lib/blog-navigation";
 import { useLocale } from "next-intl";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
+import { useMounted } from "@/lib/hooks/use-mounted";
 import type { MenuNavigationItem } from "@/app/(blog)/types/menu-navigation-item";
 import {
   findCategoryRouteItem,
@@ -42,6 +43,11 @@ export interface BreadData {
  * @returns {JSX.Element | null} 面包屑导航或 null。
  */
 const Breadcrumb = (props: BreadCrumbProps) => {
+  const mounted = useMounted();
+  return mounted ? <MountedBreadcrumb {...props} /> : null;
+};
+
+function MountedBreadcrumb(props: BreadCrumbProps) {
   const menu = props.menu;
   const segments = useSelectedLayoutSegments();
   const segmentType = segments[0];
