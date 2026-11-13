@@ -96,6 +96,7 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
   ]);
 
   const category = assertPostCategory(postDetail);
+  const recommendations = await getRecommendedPosts(category.id, postDetail.id);
 
   const hasComments = postDetail.commentStatus === EnableStatus.ENABLE;
   const title = getPostTitle(postDetail, locale);
@@ -189,14 +190,19 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
         </ul>
       )}
       <Tags {...postDetail} />
-      <Suspense fallback={null}>
-        <RecommendedPosts
-          categoryId={category.id}
-          locale={locale}
-          postId={postDetail.id}
-          title={t("guessWhatYouLike")}
-        />
-      </Suspense>
+      {recommendations.length > 0 && (
+        <Card title={t("guessWhatYouLike")}>
+          <ul className="leading-5 list-outside ml-4 mt-2 list-disc">
+            {recommendations.map((item) => (
+              <li key={item.id} className="my-2">
+                <Link href={`/archives/${item.id}`} className="link-light">
+                  {item.title?.[locale] || item.quoteContent?.[locale]}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
       {hasComments && (
         <CommentClient id={id} type={MenuType.CATEGORY}>
           <Suspense
@@ -213,35 +219,6 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
         </CommentClient>
       )}
     </>
-  );
-}
-
-async function RecommendedPosts({
-  categoryId,
-  locale,
-  postId,
-  title,
-}: {
-  categoryId: string;
-  locale: ReturnType<typeof normalizeMultiLangLocale>;
-  postId: string;
-  title: string;
-}) {
-  const recommendations = await getRecommendedPosts(categoryId, postId);
-  if (recommendations.length === 0) return null;
-
-  return (
-    <Card title={title}>
-      <ul className="leading-5 list-outside ml-4 mt-2 list-disc">
-        {recommendations.map((item) => (
-          <li key={item.id} className="my-2">
-            <Link href={`/archives/${item.id}`} className="link-light">
-              {item.title?.[locale] || item.quoteContent?.[locale]}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </Card>
   );
 }
 
