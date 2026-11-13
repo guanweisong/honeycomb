@@ -46,27 +46,8 @@ async function getPrefetchedPageDetail(id: string) {
   });
   return trpc.page.detail({ id });
 }
-/**
- * 页面详情组件。
- * 用于显示单个页面的详细内容，包括页面信息、评论等。
- * @param {PageProps<"/[locale]/pages/[id]">} props - 组件属性。
- * @returns {Promise<JSX.Element>} 页面详情。
- */
-export default function Pages(props: PageProps<"/[locale]/pages/[id]">) {
-  const content = <PageContent {...props} />;
-  if (process.env.NODE_ENV === "development") {
-    // Let Next's dev instant-route validator see URL params behind Suspense.
-    // Production must render generated detail bodies into the first HTML response.
-    return (
-      <Suspense fallback={<LoadingState variant="region" />}>
-        {content}
-      </Suspense>
-    );
-  }
-  return content;
-}
 
-async function PageContent(props: PageProps<"/[locale]/pages/[id]">) {
+export default async function Pages(props: PageProps<"/[locale]/pages/[id]">) {
   const { id, locale: rawLocale } = await props.params;
   assertDetailId(id);
   const locale = normalizeMultiLangLocale(rawLocale);

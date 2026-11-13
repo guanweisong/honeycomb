@@ -28,7 +28,6 @@ vi.mock("next/server", async (importOriginal) => ({
 vi.mock("next/cache", () => ({
   cacheLife: vi.fn(),
   cacheTag: vi.fn(),
-  prefetch: vi.fn(async () => undefined),
 }));
 vi.mock("@/app/trpc/server", () => ({
   createServerClient: async () => ({
@@ -87,10 +86,7 @@ const entryPoints = [
   {
     name: "archive content",
     query: mockPostDetail,
-    invoke: (id: string) => {
-      const route = Archives(routeProps(id));
-      return route.type(route.props);
-    },
+    invoke: (id: string) => Archives(routeProps(id)),
   },
   {
     name: "archive metadata",
@@ -100,10 +96,7 @@ const entryPoints = [
   {
     name: "page content",
     query: mockPageDetail,
-    invoke: (id: string) => {
-      const route = Pages(routeProps(id));
-      return route.type(route.props);
-    },
+    invoke: (id: string) => Pages(routeProps(id)),
   },
   {
     name: "page metadata",

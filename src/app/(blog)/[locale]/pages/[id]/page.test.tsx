@@ -166,10 +166,7 @@ describe("pages detail page", () => {
   });
 
   function pageContent(props: Parameters<typeof Pages>[0]) {
-    const route = Pages(props);
-    return (
-      route.type as (props: Parameters<typeof Pages>[0]) => Promise<React.ReactNode>
-    )(route.props);
+    return Pages(props);
   }
 
   async function renderPage(props: Parameters<typeof Pages>[0]) {
@@ -244,6 +241,7 @@ describe("pages detail page", () => {
       template: PageTemplate.FRIENDLY_LINKS,
       imagesInContent: [],
       title: { zh: "友链" },
+      content: { zh: "页面正文" },
     });
     mockComments.mockReturnValue(comments);
     await renderPage({
@@ -254,6 +252,8 @@ describe("pages detail page", () => {
       searchParams: Promise.resolve({}),
     });
     expect(mockCommentRender).toHaveBeenCalled();
+    expect(container.querySelector("h1")?.textContent).toBe("友链");
+    expect(container.querySelector("article")?.textContent).toBe("页面正文");
     const failure = new Error("comments unavailable");
     rejectComments(failure);
     await expect(comments).rejects.toBe(failure);
