@@ -262,6 +262,12 @@ test.describe("blog detail body prefetch", () => {
     await openBlogHome(page);
 
     const postTitle = "Reliable browser gates";
+    const postHref = "/en/archives/000000000000000000000005";
+    const postLink = page.locator(`main a[href="${postHref}"]`).first();
+    await expect(postLink).toBeVisible();
+    await postLink.click();
+    await expect(page).toHaveURL(postHref);
+
     const authorHref = "/en/list/authors/000000000000000000000001";
     const authorLink = page.locator(`main a[href="${authorHref}"]`).first();
     await expect(authorLink).toBeVisible();
@@ -272,8 +278,7 @@ test.describe("blog detail body prefetch", () => {
     await expect(page).toHaveURL(authorHref);
     await expect(page.locator("main")).toContainText(postTitle);
 
-    const postHref = "/en/archives/000000000000000000000005";
-    await page.locator(`main a[href="${postHref}"]`).first().click();
+    await page.goBack();
     await expect(page).toHaveURL(postHref);
 
     const tagHref = "/en/list/tags/000000000000000000000009";
