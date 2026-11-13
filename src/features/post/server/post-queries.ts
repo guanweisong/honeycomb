@@ -325,6 +325,37 @@ export async function listPublishedPostSitemapEntries(
   );
 }
 
+/** Published-only IDs used to prerender public author and tag list routes. */
+export async function listPublishedPostListFilterIds(db: Database) {
+  const [authors, tags] = await Promise.all([
+    observeDbOperation("post.public-list-path-ids.authors", "select", () =>
+      db
+        .select({ id: schema.post.authorId })
+        .from(schema.post)
+        .where(eq(schema.post.status, PostStatus.PUBLISHED))
+        .groupBy(schema.post.authorId),
+    ),
+    observeDbOperation("post.public-list-path-ids.tags", "select", () =>
+      db
+        .select({ id: schema.postTag.tagId })
+        .from(schema.postTag)
+        .where(
+          sql`exists (
+            select 1 from ${schema.post}
+            where ${schema.post.id} = ${schema.postTag.postId}
+              and ${schema.post.status} = ${PostStatus.PUBLISHED}
+          )`,
+        )
+        .groupBy(schema.postTag.tagId),
+    ),
+  ]);
+
+  return {
+    authorIds: authors.map(({ id }) => id),
+    tagIds: tags.map(({ id }) => id),
+  };
+}
+
 export function countPublishedPosts(db: Database) {
   return countPostIds(db, eq(schema.post.status, PostStatus.PUBLISHED));
 }

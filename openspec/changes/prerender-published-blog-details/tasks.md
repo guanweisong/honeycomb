@@ -14,3 +14,4 @@
 
 - [x] 3.1 运行 `bun --no-env-file run verify:pr`，确认类型、Lint、OpenSpec 和完整单元测试通过。
 - [x] 3.2 使用独占本地 fixture 运行生产构建，并确认中英文详情路径已预渲染。
+- [x] 3.3 将文章推荐查询限制在独立预取 Suspense 边界，并确认文章详情预渲染 HTML 包含正文。

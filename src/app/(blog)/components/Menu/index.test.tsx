@@ -2,6 +2,7 @@ import { MenuType } from "@/features/menu/types/menu.type";
 import React, { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoot, type Root } from "react-dom/client";
+import { renderToStaticMarkup } from "react-dom/server";
 
 (
   globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }
@@ -10,10 +11,17 @@ import { createRoot, type Root } from "react-dom/client";
 let pathname = "/list/category/parent/child";
 let segments = ["list", "category/parent/child"];
 let categoryId: string | undefined;
+let prerendering = false;
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => pathname,
-  useSelectedLayoutSegments: () => segments,
+  usePathname: () => {
+    if (prerendering) throw new Error("Route hooks are client-only");
+    return pathname;
+  },
+  useSelectedLayoutSegments: () => {
+    if (prerendering) throw new Error("Route hooks are client-only");
+    return segments;
+  },
 }));
 
 vi.mock("next-intl", () => ({
@@ -149,6 +157,23 @@ describe("blog menu navigation", () => {
     expect(
       navigation?.querySelector('[aria-current="page"]')?.textContent,
     ).toBe("父分类");
+  });
+
+  it("renders static menu links without reading client route state", () => {
+    prerendering = true;
+    try {
+      const html = renderToStaticMarkup(
+        React.createElement(Menu, {
+          data: menuData,
+          flatMenuData: flatMenu,
+        }),
+      );
+
+      expect(html).toContain('href="/list/category/parent"');
+      expect(html).not.toContain("<button");
+    } finally {
+      prerendering = false;
+    }
   });
 
   it("closes the mobile menu with Escape and restores toggle focus", async () => {

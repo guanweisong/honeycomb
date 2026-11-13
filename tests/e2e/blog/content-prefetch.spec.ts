@@ -174,6 +174,24 @@ async function expectDetailRefreshInFirstDocument(
   );
 }
 
+async function expectListRefreshInFirstDocument(
+  page: Page,
+  href: string,
+  cardTitle: string,
+) {
+  const response = await page.goto(href, { waitUntil: "domcontentloaded" });
+  expect(response?.status()).toBe(200);
+  const html = await response!.text();
+  const mainStart = html.indexOf("<main");
+  const mainEnd = html.indexOf("</main>", mainStart);
+
+  expect(mainStart).toBeGreaterThanOrEqual(0);
+  expect(mainEnd).toBeGreaterThan(mainStart);
+  expect(html.slice(mainStart, mainEnd)).toContain(cardTitle);
+  expect(html).not.toContain('aria-label="Loading articles..."');
+  await expect(page.locator("main")).toContainText(cardTitle);
+}
+
 test.describe("blog detail body prefetch", () => {
   test("@production renders the public article body between header and footer on refresh", async ({
     page,
@@ -190,10 +208,31 @@ test.describe("blog detail body prefetch", () => {
     page,
   }) => {
     const href = "/en/pages/000000000000000000000006";
-    await expectDetailRefreshInFirstDocument(
+    await expectDetailRefreshInFirstDocument(page, href, "About the E2E site.");
+  });
+
+  test("@production renders list cards without a fallback on refresh", async ({
+    page,
+  }) => {
+    await expectListRefreshInFirstDocument(
       page,
-      href,
-      "About the E2E site.",
+      "/en/list/category/engineering",
+      "Reliable browser gates",
+    );
+  });
+
+  test("@production renders populated tag and author list cards on refresh", async ({
+    page,
+  }) => {
+    await expectListRefreshInFirstDocument(
+      page,
+      "/en/list/tags/000000000000000000000009",
+      "Reliable browser gates",
+    );
+    await expectListRefreshInFirstDocument(
+      page,
+      "/en/list/authors/000000000000000000000001",
+      "Reliable browser gates",
     );
   });
 
@@ -212,6 +251,44 @@ test.describe("blog detail body prefetch", () => {
 
     await link.click();
     await expect(page).toHaveURL(href);
+    await expect(page.locator("main")).toContainText(postTitle);
+  });
+
+  test("@production prefetches populated author and tag list cards", async ({
+    page,
+  }) => {
+    const payloads = await captureRscPayloads(page);
+    await page.setViewportSize({ width: 1280, height: 1000 });
+    await openBlogHome(page);
+
+    const postTitle = "Reliable browser gates";
+    const postHref = "/en/archives/000000000000000000000005";
+    const postLink = page.locator(`main a[href="${postHref}"]`).first();
+    await expect(postLink).toBeVisible();
+    await postLink.click();
+    await expect(page).toHaveURL(postHref);
+
+    const authorHref = "/en/list/authors/000000000000000000000001";
+    const authorLink = page.locator(`main a[href="${authorHref}"]`).first();
+    await expect(authorLink).toBeVisible();
+    await expectPrefetchedBody(payloads, authorHref, postTitle, {
+      completed: true,
+    });
+    await authorLink.click();
+    await expect(page).toHaveURL(authorHref);
+    await expect(page.locator("main")).toContainText(postTitle);
+
+    await page.goBack();
+    await expect(page).toHaveURL(postHref);
+
+    const tagHref = "/en/list/tags/000000000000000000000009";
+    const tagLink = page.locator(`main a[href="${tagHref}"]`).first();
+    await expect(tagLink).toBeVisible();
+    await expectPrefetchedBody(payloads, tagHref, postTitle, {
+      completed: true,
+    });
+    await tagLink.click();
+    await expect(page).toHaveURL(tagHref);
     await expect(page.locator("main")).toContainText(postTitle);
   });
 
@@ -257,9 +334,7 @@ test.describe("blog detail body prefetch", () => {
         bodyText,
         { timeout: 2000 },
       );
-      await expect(page.locator("main")).toContainText(
-        recommendationHeading,
-      );
+      await expect(page.locator("main")).toContainText(recommendationHeading);
     } finally {
       navigationResponseReleased = true;
       releaseNavigationResponse?.();

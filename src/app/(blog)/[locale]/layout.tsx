@@ -1,17 +1,16 @@
-import React, { Suspense } from "react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { Suspense } from "react";
 import { clientEnv } from "@/env/client";
 import type { Metadata, Viewport } from "next";
 import "@/app/(blog)/app.scss";
 import BackToTop from "@/app/(blog)/components/BackToTop";
+import BlogObservability from "@/app/(blog)/components/BlogObservability";
 import Header from "@/app/(blog)/components/Header";
 import Footer from "@/app/(blog)/components/Footer";
 import { ThemeProvider } from "next-themes";
 import { setRequestLocale } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { NextIntlClientProvider } from "next-intl";
-import { Analytics } from "@vercel/analytics/next";
 import {
   defaultSocialImage,
   DynamicMetadataMarker,
@@ -69,9 +68,6 @@ export default async function LocaleLayout({
         <meta name="theme-color" content="#FFFFFF" />
       </head>
       <body>
-        <Suspense fallback={null}>
-          <DynamicMetadataMarker />
-        </Suspense>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -96,8 +92,10 @@ export default async function LocaleLayout({
             </NextIntlClientProvider>
           </div>
         </ThemeProvider>
-        <Analytics />
-        <SpeedInsights />
+        <BlogObservability />
+        <Suspense fallback={null}>
+          <DynamicMetadataMarker />
+        </Suspense>
       </body>
       {clientEnv.NEXT_PUBLIC_GA_BLOG_ID ? (
         <GoogleAnalytics gaId={clientEnv.NEXT_PUBLIC_GA_BLOG_ID} />

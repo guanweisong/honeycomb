@@ -4,6 +4,12 @@ import type { MultiLangEnum } from "@/lib/i18n/multi-lang";
 
 export const defaultSocialImage = "/static/images/logo.png";
 
+/** Defers locale-dependent metadata while keeping public content prefetchable. */
+export async function DynamicMetadataMarker() {
+  await connection();
+  return null;
+}
+
 export function createLocalizedAlternates(
   locale: MultiLangEnum,
   path: `/${string}`,
@@ -15,11 +21,6 @@ export function createLocalizedAlternates(
       zh: `/zh${path}`,
     },
   };
-}
-
-export async function DynamicMetadataMarker() {
-  await connection();
-  return null;
 }
 
 export function createContentMetadata({

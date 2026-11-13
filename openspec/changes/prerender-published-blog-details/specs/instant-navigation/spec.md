@@ -2,12 +2,17 @@
 
 ### Requirement: 动态语言和内容参数无需完整构建时枚举
 
-根 `[locale]` 和列表 slug MUST NOT 依赖 `generateStaticParams()` 枚举完整参数。文章归档 ID 与独立页面 ID MAY 使用 `generateStaticParams()` 预生成构建时已发布内容的路径；该枚举 MUST 使用已发布内容的轻量 ID 投影，并生成全部支持语言的路径。文章和页面详情路由 MUST NOT 将完整 ID 枚举作为路由正确性的前提；构建后新增或未枚举的 ID MUST 仍可在运行时解析。空内容时，生成器 MUST 按 Cache Components 非空参数要求返回不会暴露内容的无效占位 ID，并由既有 ID 校验处理为 not-found。页面 MUST 在需要运行时解析参数或数据时保留局部 Suspense 边界，使共享静态页面外壳可复用。
+根 `[locale]` 和列表 slug MUST NOT 依赖 `generateStaticParams()` 枚举完整参数。文章归档 ID 与独立页面 ID MAY 使用 `generateStaticParams()` 预生成构建时已发布内容的路径；该枚举 MUST 使用已发布内容的轻量 ID 投影，并生成全部支持语言的路径。文章和页面详情路由 MUST NOT 将完整 ID 枚举作为路由正确性的前提；构建后新增或未枚举的 ID MUST 仍可在运行时解析。空内容时，生成器 MUST 按 Cache Components 非空参数要求返回不会暴露内容的无效占位 ID，并由既有 ID 校验处理为 not-found。已生成详情 URL 的首个预渲染 HTML MUST 包含共享外壳及公开正文；请求时评论、友情链接等可选读取 MUST 保持在局部 Suspense 边界内。文章推荐查询 MUST 放在独立的 Suspense 边界中并使用 `prefetch()` 延后到完整 URL 预取阶段；这项延后 MUST NOT 将文章正文排除在首个预渲染 HTML 或完整 URL 预取响应之外。推荐查询失败时 MUST 只省略推荐模块。
 
 #### Scenario: 构建当前已发布详情路径
 
 - **WHEN** Next.js 构建应用且数据库包含已发布文章或独立页面
-- **THEN** 每个已发布 ID 都为全部支持语言生成详情路径，并使用原有公开详情读取生成页面内容
+- **THEN** 每个已发布 ID 都为全部支持语言生成详情路径，首个预渲染 HTML 含对应公开正文，并使用原有公开详情读取生成页面内容
+
+#### Scenario: 文章推荐延后且正文仍预渲染
+
+- **WHEN** Next.js 构建或预取带有猜你喜欢模块的文章详情 URL
+- **THEN** 构建 HTML 先包含文章正文，完整 URL 预取等待推荐查询完成并包含文章正文；推荐失败只省略推荐模块
 
 #### Scenario: 构建后访问新增详情 ID
 

@@ -10,6 +10,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
+import { useMounted } from "@/lib/hooks/use-mounted";
 import { PostListSkeleton } from "@/app/(blog)/components/features/post/public/components/PostList/Skeleton";
 import type {
   PublicPostListItem,
@@ -44,18 +45,91 @@ export interface PostListProps {
  * @returns {JSX.Element} 文章列表。
  */
 export default function PostList(props: PostListProps): JSX.Element {
-  const { queryParams, initialData } = props;
+  const mounted = useMounted();
+  return mounted ? (
+    <InteractivePostList {...props} />
+  ) : (
+    <StaticPostList initialData={props.initialData} />
+  );
+}
+
+type PostListQueryState = ReturnType<typeof useInfiniteQueryPostList>;
+
+type PostListContentProps = Pick<
+  PostListQueryState,
+  | "hasNextPage"
+  | "isFetchingNextPage"
+  | "isFetching"
+  | "isError"
+  | "isFetchNextPageError"
+> & {
+  data: PostListQueryState["data"] | undefined;
+  fetchNextPage?: PostListQueryState["fetchNextPage"];
+  refetch?: PostListQueryState["refetch"];
+  sentinelRef?: React.RefObject<HTMLDivElement | null>;
+};
+
+function InteractivePostList(props: PostListProps): JSX.Element {
+  const query = useInfiniteQueryPostList(props.queryParams, props.initialData);
   const sentinel = useRef<HTMLDivElement>(null);
-  const {
-    data,
-    fetchNextPage,
-    refetch,
-    hasNextPage,
-    isFetchingNextPage,
-    isFetching,
-    isError,
-    isFetchNextPageError,
-  } = useInfiniteQueryPostList(queryParams, initialData);
+  const { isFetching, isError, hasNextPage, fetchNextPage } = query;
+
+  // Keep pagination observation beside the query hook so its effect runs after
+  // React Query applies updated options when the filters change.
+  useEffect(() => {
+    if (
+      !sentinel.current ||
+      isFetching ||
+      isError ||
+      !hasNextPage
+    ) {
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          void fetchNextPage({ cancelRefetch: false });
+        }
+      },
+      { rootMargin: "300px" },
+    );
+    observer.observe(sentinel.current);
+    return () => observer.disconnect();
+  }, [isFetching, isError, hasNextPage, fetchNextPage]);
+
+  return <PostListContent {...query} sentinelRef={sentinel} />;
+}
+
+function StaticPostList({
+  initialData,
+}: Pick<PostListProps, "initialData">): JSX.Element {
+  return (
+    <PostListContent
+      data={
+        initialData
+          ? { pages: [initialData], pageParams: [null] }
+          : undefined
+      }
+      hasNextPage={Boolean(initialData?.nextCursor)}
+      isFetchingNextPage={false}
+      isFetching={false}
+      isError={false}
+      isFetchNextPageError={false}
+    />
+  );
+}
+
+function PostListContent({
+  data,
+  fetchNextPage,
+  refetch,
+  hasNextPage,
+  isFetchingNextPage,
+  isFetching,
+  isError,
+  isFetchNextPageError,
+  sentinelRef,
+}: PostListContentProps): JSX.Element {
   const locale = normalizeMultiLangLocale(useLocale());
   const t = useTranslations("PostList");
   const typeTranslations = useTranslations("Search.types");
@@ -70,21 +144,6 @@ export default function PostList(props: PostListProps): JSX.Element {
    * 是否正在加载更多文章。
    */
   const isLoadingMore = isFetchingNextPage;
-
-  // 只观察列表末尾，避免每个滚动事件都触发列表渲染或读取文档布局。
-  useEffect(() => {
-    if (!sentinel.current || isFetching || isError || !hasNextPage) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          void fetchNextPage({ cancelRefetch: false });
-        }
-      },
-      { rootMargin: "300px" },
-    );
-    observer.observe(sentinel.current);
-    return () => observer.disconnect();
-  }, [isFetching, isError, hasNextPage, fetchNextPage]);
 
   /**
    * 渲染文章列表中的单个卡片。
@@ -168,7 +227,11 @@ export default function PostList(props: PostListProps): JSX.Element {
       <div className="flex flex-col gap-4">
         {postList.map((item, index) => renderCard(item, index))}
       </div>
-      <div ref={sentinel} data-testid="post-list-sentinel" aria-hidden="true" />
+      <div
+        ref={sentinelRef}
+        data-testid="post-list-sentinel"
+        aria-hidden="true"
+      />
       {isError && (
         <div className="mt-4 flex flex-col items-center gap-2">
           <p role="alert">{errorTranslations("title")}</p>
@@ -178,9 +241,9 @@ export default function PostList(props: PostListProps): JSX.Element {
             disabled={isFetching}
             onClick={() => {
               if (isFetchNextPageError) {
-                void fetchNextPage({ cancelRefetch: false });
+                void fetchNextPage?.({ cancelRefetch: false });
               } else {
-                void refetch();
+                void refetch?.();
               }
             }}
           >

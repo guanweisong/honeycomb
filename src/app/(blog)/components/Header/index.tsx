@@ -95,9 +95,7 @@ export default async function Header({ locale }: { locale: string }) {
             </span>
           </div>
           <div className="flex items-center">
-            <Suspense fallback={<MenuFallback data={navigationLinks} />}>
-              <Menu data={navigationLinks} flatMenuData={navigation} />
-            </Suspense>
+            <Menu data={navigationLinks} flatMenuData={navigation} />
           </div>
           <div className="flex items-center gap-3 mr-2 shrink-0">
             <div data-testid="theme-switcher">
@@ -116,39 +114,5 @@ export default async function Header({ locale }: { locale: string }) {
         </Suspense>
       </ViewTransition>
     </>
-  );
-}
-
-function MenuFallback({ data }: { data: BlogNavigationLink[] }) {
-  return (
-    <div className="flex h-full">
-      <div
-        aria-hidden="true"
-        className="w-9 px-2 lg:hidden absolute left-0 top-[50%] -translate-y-1/2"
-      >
-        <div className="h-0.5 my-1 bg-gray-500" />
-        <div className="h-0.5 my-1 bg-gray-500" />
-        <div className="h-0.5 my-1 bg-gray-500" />
-      </div>
-      <ul
-        role="navigation"
-        aria-label="Main navigation"
-        className="absolute backdrop-blur bg-auto-back-gray/80 hidden lg:static lg:flex py-2 lg:py-0 lg:px-2 lg:rounded-full"
-      >
-        {data.map((item, index) => (
-          <li
-            key={`${item.link}-${index}`}
-            className="relative group lg:flex lg:items-center"
-          >
-            <Link
-              href={item.link ?? ""}
-              className="lg:relative leading-10 lg:z-20 px-4 lg:flex lg:items-center"
-            >
-              {item.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }
