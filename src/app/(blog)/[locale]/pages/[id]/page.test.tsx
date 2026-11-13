@@ -21,6 +21,7 @@ const mockSettingIndex = vi.fn();
 const mockLinks = vi.fn();
 const mockCommentRender = vi.fn();
 const mockGetTranslations = vi.fn();
+const mockGetPublishedPageDetailStaticParams = vi.fn();
 let testLocale = "zh";
 
 vi.mock("next-intl/server", () => ({
@@ -40,6 +41,10 @@ vi.mock("next/server", async (importOriginal) => ({
 vi.mock("next/cache", () => ({
   cacheLife: vi.fn(),
   cacheTag: vi.fn(),
+}));
+vi.mock("@/app/(blog)/lib/server/detail-static-params", () => ({
+  getPublishedPageDetailStaticParams: () =>
+    mockGetPublishedPageDetailStaticParams(),
 }));
 vi.mock("next-intl", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next-intl")>()),
@@ -88,7 +93,10 @@ vi.mock("@/app/(blog)/components/features/media/public/RichText", () => ({
   RichText: ({ html }: { html?: string }) => <article>{html}</article>,
 }));
 
-import Pages, { generateMetadata } from "@/app/(blog)/[locale]/pages/[id]/page";
+import Pages, {
+  generateMetadata,
+  generateStaticParams,
+} from "@/app/(blog)/[locale]/pages/[id]/page";
 
 describe("pages detail page", () => {
   let container: HTMLDivElement;
@@ -139,11 +147,21 @@ describe("pages detail page", () => {
     mockSettingIndex.mockReset().mockResolvedValue({
       siteName: { en: "Honeycomb", zh: "蜂巢" },
     });
+    mockGetPublishedPageDetailStaticParams.mockReset().mockResolvedValue([
+      { locale: "en", id: "page-en" },
+      { locale: "zh", id: "page-zh" },
+    ]);
   });
 
   afterEach(async () => {
     await act(async () => root.unmount());
     container.remove();
+  });
+
+  it("returns only page IDs for the parent locale", async () => {
+    await expect(
+      generateStaticParams({ params: { locale: "zh" } }),
+    ).resolves.toEqual([{ id: "page-zh" }]);
   });
 
   function pageContent(props: Parameters<typeof Pages>[0]) {

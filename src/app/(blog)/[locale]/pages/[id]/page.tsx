@@ -30,8 +30,15 @@ import {
 } from "@/lib/cache/public-cache-keys";
 import { getPublishedPageDetailStaticParams } from "@/app/(blog)/lib/server/detail-static-params";
 
-export function generateStaticParams() {
-  return getPublishedPageDetailStaticParams();
+export async function generateStaticParams({
+  params,
+}: {
+  params: { locale: string };
+}) {
+  const detailParams = await getPublishedPageDetailStaticParams();
+  return detailParams
+    .filter(({ locale }) => locale === params.locale)
+    .map(({ id }) => ({ id }));
 }
 
 async function getPrefetchedPageDetail(id: string) {

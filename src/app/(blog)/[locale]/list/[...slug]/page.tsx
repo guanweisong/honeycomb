@@ -10,12 +10,15 @@ import { getPublishedPostListStaticParams } from "@/app/(blog)/lib/server/list-s
 import { resolveListTitle } from "@/app/(blog)/[locale]/list/[...slug]/page.utils";
 import { getCachedListPageData } from "@/app/(blog)/[locale]/list/[...slug]/page.data";
 import { MenuType } from "@/features/menu/types/menu.type";
-import { supportedLanguages } from "@/lib/i18n/i18n";
 
 /** Generated list URLs must render completely during prerendering. */
 export const ensureStatic = "navigation";
 
-export async function generateStaticParams() {
+export async function generateStaticParams({
+  params,
+}: {
+  params: { locale: string };
+}) {
   const [{ list }, publishedFilterParams] = await Promise.all([
     getCachedPublicMenu(),
     getPublishedPostListStaticParams(),
@@ -34,10 +37,10 @@ export async function generateStaticParams() {
   }
 
   return [
-    ...supportedLanguages.flatMap((locale) =>
-      [...categorySlugs.values()].map((slug) => ({ locale, slug })),
-    ),
-    ...publishedFilterParams,
+    ...[...categorySlugs.values()].map((slug) => ({ slug })),
+    ...publishedFilterParams
+      .filter(({ locale }) => locale === params.locale)
+      .map(({ slug }) => ({ slug })),
   ];
 }
 

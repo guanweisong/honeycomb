@@ -10,11 +10,15 @@ import { ThemeProvider } from "next-themes";
 import { setRequestLocale } from "next-intl/server";
 import { normalizeMultiLangLocale } from "@/lib/i18n/multi-lang";
 import { NextIntlClientProvider } from "next-intl";
-import {
-  defaultSocialImage,
-} from "@/app/(blog)/lib/metadata";
+import { defaultSocialImage } from "@/app/(blog)/lib/metadata";
 import { getCachedMetadataSettings } from "@/app/(blog)/lib/metadata-settings";
 import { Toaster } from "@/components/ui/sonner";
+import { supportedLanguages } from "@/lib/i18n/i18n";
+
+/** Make locale params available to layout metadata during prerendering. */
+export function generateStaticParams() {
+  return supportedLanguages.map((locale) => ({ locale }));
+}
 
 export async function generateMetadata({
   params,

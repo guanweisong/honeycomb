@@ -17,6 +17,7 @@ const mockIncrementViews = vi.fn();
 const mockClientIncrementViews = vi.fn();
 const mockComments = vi.fn();
 const mockPrefetch = vi.fn();
+const mockGetPublishedPostDetailStaticParams = vi.fn();
 
 vi.mock("react", async (importOriginal) => {
   const original = await importOriginal<typeof import("react")>();
@@ -39,6 +40,10 @@ vi.mock("next/cache", () => ({
   cacheLife: vi.fn(),
   cacheTag: vi.fn(),
   prefetch: () => mockPrefetch(),
+}));
+vi.mock("@/app/(blog)/lib/server/detail-static-params", () => ({
+  getPublishedPostDetailStaticParams: () =>
+    mockGetPublishedPostDetailStaticParams(),
 }));
 
 vi.mock("next-intl/server", () => ({
@@ -122,6 +127,7 @@ vi.mock("@/app/(blog)/components/features/media/public/RichText", () => ({
 import type { PostDetailResult } from "@/features/post/types/post.read-model";
 import Archives, {
   generateMetadata,
+  generateStaticParams,
 } from "@/app/(blog)/[locale]/archives/[id]/page";
 import {
   assertPostCategory,
@@ -185,6 +191,10 @@ describe("archives page", () => {
       siteName: { zh: "蜂巢" },
     });
     mockPostDetail.mockReset().mockResolvedValue({ ...articleDetail });
+    mockGetPublishedPostDetailStaticParams.mockReset().mockResolvedValue([
+      { locale: "en", id: "post-en" },
+      { locale: "zh", id: "post-zh" },
+    ]);
     mockRandomPosts.mockReset().mockResolvedValue([
       { id: "111111111111111111111111", title: { zh: "当前文章" } },
       { id: "222222222222222222222222", title: { zh: "推荐文章" } },
@@ -197,6 +207,12 @@ describe("archives page", () => {
   afterEach(async () => {
     await act(async () => root.unmount());
     container.remove();
+  });
+
+  it("returns only article IDs for the parent locale", async () => {
+    await expect(
+      generateStaticParams({ params: { locale: "zh" } }),
+    ).resolves.toEqual([{ id: "post-zh" }]);
   });
 
   function archiveContent(detail: DetailFixture) {
