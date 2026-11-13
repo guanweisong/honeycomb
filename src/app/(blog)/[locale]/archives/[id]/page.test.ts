@@ -16,7 +16,6 @@ const mockRandomPosts = vi.fn();
 const mockIncrementViews = vi.fn();
 const mockClientIncrementViews = vi.fn();
 const mockComments = vi.fn();
-const mockPrefetch = vi.fn();
 const mockGetPublishedPostDetailStaticParams = vi.fn();
 
 vi.mock("react", async (importOriginal) => {
@@ -39,7 +38,6 @@ vi.mock("next/server", async (importOriginal) => ({
 vi.mock("next/cache", () => ({
   cacheLife: vi.fn(),
   cacheTag: vi.fn(),
-  prefetch: () => mockPrefetch(),
 }));
 vi.mock("@/app/(blog)/lib/server/detail-static-params", () => ({
   getPublishedPostDetailStaticParams: () =>
@@ -175,7 +173,6 @@ describe("archives page", () => {
     root = createRoot(container);
 
     mockGetLocale.mockReset().mockResolvedValue("zh");
-    mockPrefetch.mockReset().mockResolvedValue(undefined);
     mockCreateServerClient.mockReset();
     mockGetTranslations.mockReset().mockResolvedValue((key: string) => {
       const values: Record<string, string> = {
@@ -218,13 +215,10 @@ describe("archives page", () => {
 
   function archiveContent(detail: DetailFixture) {
     mockPostDetail.mockResolvedValue(detail);
-    const route = Archives({
+    return Archives({
       params: Promise.resolve({ id: detail.id, locale: "zh" }),
       searchParams: Promise.resolve({}),
     });
-    return (route.type as (props: unknown) => Promise<React.ReactNode>)(
-      route.props,
-    );
   }
 
   async function renderArchive(detail: DetailFixture) {
@@ -246,13 +240,10 @@ describe("archives page", () => {
       const translation = (key: string) => key;
       const pending = Promise.withResolvers<typeof translation>();
       mockGetTranslations.mockReturnValueOnce(pending.promise);
-      const route = Archives({
+      const rendered = Archives({
         params: Promise.resolve({ id: articleDetail.id, locale }),
         searchParams: Promise.resolve({}),
       });
-      const rendered = (
-        route.type as (props: unknown) => Promise<React.ReactNode>
-      )(route.props);
       try {
         await vi.waitFor(() => expect(mockGetTranslations).toHaveBeenCalled());
         expect(mockGetTranslations).toHaveBeenCalledTimes(2);
@@ -342,13 +333,6 @@ describe("archives page", () => {
     );
     expect(pageContentSettled).toBe(false);
     translationPending.resolve(translation);
-    await vi.waitFor(() => {
-      expect(
-        pageContentSettled || mockPrefetch.mock.calls.length > 0,
-      ).toBe(true);
-    });
-    expect(pageContentSettled).toBe(false);
-    expect(mockPrefetch).toHaveBeenCalledOnce();
     await vi.waitFor(() => expect(mockRandomPosts).toHaveBeenCalledOnce());
     expect(mockCreateServerClient).toHaveBeenCalledWith({
       requestContext: { requestId: "public-recommendation-prefetch" },

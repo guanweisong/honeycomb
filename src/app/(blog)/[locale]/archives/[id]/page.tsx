@@ -34,7 +34,7 @@ import {
 import { createContentMetadata } from "@/app/(blog)/lib/metadata";
 import LoadingState from "@/components/LoadingState";
 import { assertDetailId } from "@/app/(blog)/lib/assert-detail-id";
-import { cacheLife, cacheTag, prefetch } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import {
   POST_DETAILS_CACHE_TAG,
   postDetailCacheTag,
@@ -64,23 +64,9 @@ async function getPrefetchedPostDetail(id: string) {
   }
 }
 
-/**
- * 归档页面组件。
- * 用于显示单篇文章的详细内容，包括文章信息、标签、评论、相关文章等。
- * @param {PageProps<"/[locale]/archives/[id]">} props - 组件属性。
- * @returns {Promise<JSX.Element>} 归档页面。
- */
-export default function Archives(props: PageProps<"/[locale]/archives/[id]">) {
-  const content = <ArchiveContent {...props} />;
-  if (process.env.NODE_ENV === "development") {
-    // Let Next's dev instant-route validator see URL params behind Suspense.
-    // Production must render generated detail bodies into the first HTML response.
-    return <Suspense fallback={null}>{content}</Suspense>;
-  }
-  return content;
-}
-
-async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
+export default async function Archives(
+  props: PageProps<"/[locale]/archives/[id]">,
+) {
   const { id, locale: rawLocale } = await props.params;
   assertDetailId(id);
   const locale = normalizeMultiLangLocale(rawLocale);
@@ -223,7 +209,6 @@ async function ArchiveContent(props: PageProps<"/[locale]/archives/[id]">) {
 }
 
 async function getRecommendedPosts(categoryId: string, postId: string) {
-  await prefetch();
   const trpc = await createServerClient({
     requestContext: { requestId: "public-recommendation-prefetch" },
     skipRequestObservability: true,
