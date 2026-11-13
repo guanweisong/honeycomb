@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import PostList from "@/app/(blog)/components/features/post/public/components/PostList";
 import NoData from "@/app/(blog)/[locale]/list/[...slug]/components/NoData";
 import { getTranslations } from "next-intl/server";
@@ -10,15 +11,12 @@ import { getPublishedPostListStaticParams } from "@/app/(blog)/lib/server/list-s
 import { resolveListTitle } from "@/app/(blog)/[locale]/list/[...slug]/page.utils";
 import { getCachedListPageData } from "@/app/(blog)/[locale]/list/[...slug]/page.data";
 import { MenuType } from "@/features/menu/types/menu.type";
+import { supportedLanguages } from "@/lib/i18n/i18n";
 
-/** Generated list URLs must render completely during prerendering. */
-export const ensureStatic = "navigation";
+/** Generated list URLs must be static at link-prefetch time. */
+export const ensureStatic = "prefetch";
 
-export async function generateStaticParams({
-  params,
-}: {
-  params: { locale: string };
-}) {
+export async function generateStaticParams() {
   const [{ list }, publishedFilterParams] = await Promise.all([
     getCachedPublicMenu(),
     getPublishedPostListStaticParams(),
@@ -37,10 +35,10 @@ export async function generateStaticParams({
   }
 
   return [
-    ...[...categorySlugs.values()].map((slug) => ({ slug })),
-    ...publishedFilterParams
-      .filter(({ locale }) => locale === params.locale)
-      .map(({ slug }) => ({ slug })),
+    ...supportedLanguages.flatMap((locale) =>
+      [...categorySlugs.values()].map((slug) => ({ locale, slug })),
+    ),
+    ...publishedFilterParams,
   ];
 }
 
@@ -51,6 +49,20 @@ export async function generateStaticParams({
  * @returns {Promise<JSX.Element>} 文章列表页面。
  */
 export default async function List(
+  props: PageProps<"/[locale]/list/[...slug]">,
+) {
+  if (process.env.NODE_ENV === "development") {
+    // Dev does not prefetch, so isolate URL params for Next's instant validator.
+    return (
+      <Suspense fallback={null}>
+        <ListContent {...props} />
+      </Suspense>
+    );
+  }
+  return ListContent(props);
+}
+
+async function ListContent(
   props: PageProps<"/[locale]/list/[...slug]">,
 ) {
   const { type, title, emptyLabel, queryParams, listResult, listHasContent } =

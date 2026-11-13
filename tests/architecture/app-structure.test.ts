@@ -148,9 +148,10 @@ describe("App Router 恢复与 viewport 边界", () => {
     );
 
     expect(source).toContain("export async function generateMetadata");
-    expect(source).toContain("export function generateStaticParams");
+    expect(source).not.toContain("generateStaticParams");
     expect(source).toContain("getCachedMetadataSettings()");
-    expect(source).not.toContain("DynamicMetadataMarker");
+    expect(source).toContain("DynamicMetadataMarker");
+    expect(source).toContain("<Suspense fallback={null}>");
     expect(source).not.toContain("connection()");
     expect(source).toContain("metadataBase");
     expect(source).toContain("openGraph");

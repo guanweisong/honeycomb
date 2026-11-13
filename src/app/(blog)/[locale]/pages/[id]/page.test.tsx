@@ -158,10 +158,11 @@ describe("pages detail page", () => {
     container.remove();
   });
 
-  it("returns only page IDs for the parent locale", async () => {
-    await expect(
-      generateStaticParams({ params: { locale: "zh" } }),
-    ).resolves.toEqual([{ id: "page-zh" }]);
+  it("generates page detail IDs for every supported locale", async () => {
+    await expect(generateStaticParams()).resolves.toEqual([
+      { locale: "en", id: "page-en" },
+      { locale: "zh", id: "page-zh" },
+    ]);
   });
 
   function pageContent(props: Parameters<typeof Pages>[0]) {

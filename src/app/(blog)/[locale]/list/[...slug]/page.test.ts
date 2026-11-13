@@ -141,25 +141,31 @@ describe("blog list page", () => {
     container.remove();
   });
 
-  it("requires full static output for generated list URLs", () => {
-    expect(ensureStatic).toBe("navigation");
+  it("keeps generated list URLs static through link prefetch", () => {
+    expect(ensureStatic).toBe("prefetch");
   });
 
   it("prerenders category and published filter paths for every locale", async () => {
+    const params = await generateStaticParams();
+
+    expect(mockMenuIndex).toHaveBeenCalledOnce();
+    expect(mockPublishedPostListStaticParams).toHaveBeenCalledOnce();
+    expect(params).toHaveLength(supportedLanguages.length * 4);
     for (const locale of supportedLanguages) {
-      const params = await generateStaticParams({ params: { locale } });
-
-      expect(params).toHaveLength(4);
-      expect(params).toContainEqual({ slug: ["category"] });
-      expect(params).toContainEqual({ slug: ["category", "tech"] });
-      expect(params).toContainEqual({ slug: ["tags", "published-tag"] });
-      expect(params).toContainEqual({ slug: ["authors", "published-author"] });
+      expect(params).toContainEqual({ locale, slug: ["category"] });
+      expect(params).toContainEqual({
+        locale,
+        slug: ["category", "tech"],
+      });
+      expect(params).toContainEqual({
+        locale,
+        slug: ["tags", "published-tag"],
+      });
+      expect(params).toContainEqual({
+        locale,
+        slug: ["authors", "published-author"],
+      });
     }
-
-    expect(mockMenuIndex).toHaveBeenCalledTimes(supportedLanguages.length);
-    expect(mockPublishedPostListStaticParams).toHaveBeenCalledTimes(
-      supportedLanguages.length,
-    );
   });
 
   it("waits for list data and returns page content without a Suspense fallback", async () => {

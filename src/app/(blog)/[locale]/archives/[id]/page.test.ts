@@ -209,10 +209,11 @@ describe("archives page", () => {
     container.remove();
   });
 
-  it("returns only article IDs for the parent locale", async () => {
-    await expect(
-      generateStaticParams({ params: { locale: "zh" } }),
-    ).resolves.toEqual([{ id: "post-zh" }]);
+  it("generates article detail IDs for every supported locale", async () => {
+    await expect(generateStaticParams()).resolves.toEqual([
+      { locale: "en", id: "post-en" },
+      { locale: "zh", id: "post-zh" },
+    ]);
   });
 
   function archiveContent(detail: DetailFixture) {
