@@ -9,13 +9,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 let locale = "zh";
 let segments = ["list", "category/parent/child"];
-let prerendering = false;
 
 vi.mock("next/navigation", () => ({
-  useSelectedLayoutSegments: () => {
-    if (prerendering) throw new Error("Route hooks are client-only");
-    return segments;
-  },
+  useSelectedLayoutSegments: () => segments,
 }));
 
 vi.mock("next-intl", () => ({
@@ -84,13 +80,13 @@ describe("Breadcrumb", () => {
     act(() => root.render(<Breadcrumb menu={items} />));
   };
 
-  it("defers route-dependent breadcrumbs during prerendering", () => {
-    prerendering = true;
-    try {
-      expect(renderToStaticMarkup(<Breadcrumb menu={menu} />)).toBe("");
-    } finally {
-      prerendering = false;
-    }
+  it("renders resolved route breadcrumbs into prerendered HTML", () => {
+    const markup = renderToStaticMarkup(<Breadcrumb menu={menu} />);
+
+    expect(markup).toContain('aria-label="Breadcrumb"');
+    expect(markup).toContain("首页");
+    expect(markup).toContain("父分类");
+    expect(markup).toContain("子分类");
   });
 
   it("renders localized links and current item for nested categories", () => {
