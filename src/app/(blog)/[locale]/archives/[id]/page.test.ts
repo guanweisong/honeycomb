@@ -104,6 +104,19 @@ vi.mock("@/components/SectionCard", () => ({
   }) => React.createElement("section", { "data-title": title }, children),
 }));
 
+vi.mock("./Recommendations", () => ({
+  default: ({ title }: { title: string }) =>
+    React.createElement(
+      "section",
+      { "data-title": title },
+      React.createElement(
+        "a",
+        { href: "/archives/222222222222222222222222" },
+        "推荐文章",
+      ),
+    ),
+}));
+
 vi.mock("@/app/(blog)/lib/blog-navigation", () => ({
   Link: ({ children, href }: { children: React.ReactNode; href: string }) =>
     React.createElement("a", { href }, children),
@@ -304,19 +317,15 @@ describe("archives page", () => {
     expect(mockComments).not.toHaveBeenCalled();
     expect(container.textContent).not.toContain("3 comments");
   });
-  it("waits for recommendations before rendering article content", async () => {
-    let resolveRecommendations!: (
-      posts: { id: string; title: { zh: string } }[],
-    ) => void;
+  it("returns the article tree before recommendations finish", async () => {
     const translation = (key: string) =>
       key === "guessWhatYouLike" ? "猜你喜欢" : key;
     const translationPending = Promise.withResolvers<typeof translation>();
     mockGetTranslations.mockReturnValue(translationPending.promise);
-    mockRandomPosts.mockReturnValue(
-      new Promise((resolve) => {
-        resolveRecommendations = resolve;
-      }),
-    );
+    const recommendationsPending = Promise.withResolvers<
+      { id: string; title: { zh: string } }[]
+    >();
+    mockRandomPosts.mockReturnValue(recommendationsPending.promise);
 
     const pending = archiveContent({ ...articleDetail });
     let pageContentSettled = false;
@@ -331,87 +340,25 @@ describe("archives page", () => {
     await vi.waitFor(() =>
       expect(mockGetTranslations).toHaveBeenCalledTimes(2),
     );
-    expect(pageContentSettled).toBe(false);
     translationPending.resolve(translation);
-    await vi.waitFor(() => expect(mockRandomPosts).toHaveBeenCalledOnce());
-    expect(mockCreateServerClient).toHaveBeenCalledWith({
-      requestContext: { requestId: "public-recommendation-prefetch" },
-      skipRequestObservability: true,
-    });
-    expect(pageContentSettled).toBe(false);
+    try {
+      await vi.waitFor(() => expect(pageContentSettled).toBe(true), {
+        timeout: 250,
+      });
+      expect(mockRandomPosts).not.toHaveBeenCalled();
+      const page = await pending;
+      await act(async () => root.render(page));
 
-    resolveRecommendations([
-      { id: "111111111111111111111111", title: { zh: "当前文章" } },
-      { id: "222222222222222222222222", title: { zh: "稍后推荐" } },
-    ]);
-    const page = await pending;
-    expect(pageContentSettled).toBe(true);
-    await act(async () => root.render(page));
-
-    expect(container.querySelector("h1")?.textContent).toBe("文章标题");
-    expect(
-      container.querySelector('[data-testid="rich-text"]')?.textContent,
-    ).toBe("文章正文");
-    expect(container.querySelector('[data-testid="comment"]')).not.toBeNull();
-    expect(
-      container.querySelector('a[href="/archives/222222222222222222222222"]')
-        ?.textContent,
-    ).toBe("稍后推荐");
-    expect(
-      container.querySelector('a[href="/archives/111111111111111111111111"]'),
-    ).toBeNull();
-    expect(container.querySelector('[data-title="猜你喜欢"]')).not.toBeNull();
-    expect(
-      container.querySelector('[role="status"][aria-busy="true"]'),
-    ).toBeNull();
-  });
-
-  it("keeps the article readable after a delayed recommendation failure", async () => {
-    let rejectRecommendations!: (error: Error) => void;
-    mockRandomPosts.mockReturnValue(
-      new Promise((_resolve, reject) => {
-        rejectRecommendations = reject;
-      }),
-    );
-
-    const pagePending = archiveContent({ ...articleDetail });
-    let pageSettled = false;
-    void pagePending.then(
-      () => {
-        pageSettled = true;
-      },
-      () => {
-        pageSettled = true;
-      },
-    );
-    await vi.waitFor(() => expect(mockRandomPosts).toHaveBeenCalledOnce());
-    expect(pageSettled).toBe(false);
-    rejectRecommendations(new Error("Recommendations unavailable"));
-    const page = await pagePending;
-    expect(pageSettled).toBe(true);
-    await act(async () => root.render(page));
-
-    expect(container.querySelector("h1")?.textContent).toBe("文章标题");
-    expect(
-      container.querySelector('[data-testid="rich-text"]')?.textContent,
-    ).toBe("文章正文");
-    expect(container.querySelector('[data-testid="comment"]')).not.toBeNull();
-    expect(container.querySelector('[data-title="猜你喜欢"]')).toBeNull();
-    expect(container.querySelector('[role="status"]')).toBeNull();
-  });
-
-  it("omits recommendations when their query throws synchronously", async () => {
-    mockRandomPosts.mockImplementation(() => {
-      throw new Error("Recommendations unavailable");
-    });
-
-    await renderArchive({ ...articleDetail });
-
-    expect(
-      container.querySelector('[data-testid="rich-text"]')?.textContent,
-    ).toBe("文章正文");
-    expect(container.querySelector('[data-testid="comment"]')).not.toBeNull();
-    expect(container.querySelector('[data-title="猜你喜欢"]')).toBeNull();
+      expect(
+        container.querySelector('[data-testid="rich-text"]')?.textContent,
+      ).toBe("文章正文");
+    } finally {
+      // Release the old, blocking implementation so a failed regression test
+      // cannot leave its route promise pending.
+      recommendationsPending.resolve([]);
+      translationPending.resolve(translation);
+      await pending;
+    }
   });
 
   it("keeps JSON-LD inside its script context for hostile stored titles", async () => {
@@ -480,13 +427,10 @@ describe("archives page", () => {
     });
   });
 
-  it("omits excerpt and recommendations when neither is available", async () => {
-    mockRandomPosts.mockResolvedValue([{ id: "111111111111111111111111" }]);
-
+  it("omits excerpt when it is unavailable", async () => {
     await renderArchive({ ...articleDetail, excerpt: undefined });
 
     expect(container.textContent).not.toContain("文章摘要");
-    expect(container.querySelector('[data-title="猜你喜欢"]')).toBeNull();
   });
 
   it("rejects post details without a category relation", async () => {
