@@ -2,8 +2,7 @@ import React, { Suspense, ViewTransition } from "react";
 import { TRPCError } from "@trpc/server";
 import PostInfo from "@/app/(blog)/components/features/post/public/PostInfo";
 import Tags from "@/app/(blog)/components/features/post/public/Tags";
-import Card from "@/components/SectionCard";
-import { Link } from "@/app/(blog)/lib/blog-navigation";
+import Recommendations from "./Recommendations";
 import {
   PublicCommentCount,
   PublicCommentSection,
@@ -82,8 +81,6 @@ export default async function Archives(
   ]);
 
   const category = assertPostCategory(postDetail);
-  const recommendations = await getRecommendedPosts(category.id, postDetail.id);
-
   const hasComments = postDetail.commentStatus === EnableStatus.ENABLE;
   const title = getPostTitle(postDetail, locale);
   const jsonLd = createPostJsonLd(postDetail, locale);
@@ -176,19 +173,14 @@ export default async function Archives(
         </ul>
       )}
       <Tags {...postDetail} />
-      {recommendations.length > 0 && (
-        <Card title={t("guessWhatYouLike")}>
-          <ul className="leading-5 list-outside ml-4 mt-2 list-disc">
-            {recommendations.map((item) => (
-              <li key={item.id} className="my-2">
-                <Link href={`/archives/${item.id}`} className="link-light">
-                  {item.title?.[locale] || item.quoteContent?.[locale]}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
+      <Suspense fallback={null}>
+        <Recommendations
+          categoryId={category.id}
+          locale={locale}
+          postId={postDetail.id}
+          title={t("guessWhatYouLike")}
+        />
+      </Suspense>
       {hasComments && (
         <CommentClient id={id} type={MenuType.CATEGORY}>
           <Suspense
@@ -206,20 +198,6 @@ export default async function Archives(
       )}
     </>
   );
-}
-
-async function getRecommendedPosts(categoryId: string, postId: string) {
-  const trpc = await createServerClient({
-    requestContext: { requestId: "public-recommendation-prefetch" },
-    skipRequestObservability: true,
-  });
-  try {
-    const randomPostsList = await trpc.post.getRandomByCategory({ categoryId });
-    return randomPostsList.filter((item) => item.id !== postId);
-  } catch {
-    // Recommendations are optional and must not replace the article on failure.
-    return [];
-  }
 }
 
 /**
