@@ -173,12 +173,14 @@ export default async function Archives(
         </ul>
       )}
       <Tags {...postDetail} />
-      <Recommendations
-        categoryId={category.id}
-        locale={locale}
-        postId={postDetail.id}
-        title={t("guessWhatYouLike")}
-      />
+      <Suspense fallback={null}>
+        <Recommendations
+          categoryId={category.id}
+          locale={locale}
+          postId={postDetail.id}
+          title={t("guessWhatYouLike")}
+        />
+      </Suspense>
       {hasComments && (
         <CommentClient id={id} type={MenuType.CATEGORY}>
           <Suspense
