@@ -1,6 +1,34 @@
 import { expect, test } from "@playwright/test";
 import { FAKE_ID } from "@tests/e2e/blog/helpers";
 
+test.beforeEach(async ({ page }) => {
+  if (process.env.PLAYWRIGHT_USE_DEV_SERVER !== "1") return;
+
+  // Next.js 16.4.6 can display these framework diagnostics on valid 404 flows.
+  // Dismiss only the known dialogs, just as a developer would. Keep the real
+  // click and allow other overlays to block the test.
+  const overlay = page.locator("nextjs-portal [data-nextjs-dialog]");
+  const route404 = overlay
+    .filter({
+      hasText:
+        /Route "\/\[locale\]\/(?:archives|pages)\/\[id\]": Could not validate `instant`/,
+    })
+    .filter({ hasText: "NEXT_HTTP_ERROR_FALLBACK;404" });
+  const returnToList = overlay.filter({
+    hasText:
+      'Route "/[locale]/list/[...slug]" failed to render during instant validation and Next.js was unable to determine a reason.',
+  });
+  const themeScript = overlay
+    .filter({
+      hasText: "Encountered a script tag while rendering React component.",
+    })
+    .filter({ hasText: "src/app/(blog)/[locale]/layout.tsx" });
+  await page.addLocatorHandler(
+    route404.or(returnToList).or(themeScript),
+    (dialog) => dialog.press("Escape"),
+  );
+});
+
 const missingRoutes = [
   { path: "/en/route-that-does-not-exist", unmatched: true },
   { path: "/zh/route-that-does-not-exist", unmatched: true },
@@ -43,6 +71,8 @@ for (const { path, unmatched } of missingRoutes) {
     await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
     const home = fallback.getByRole("link", { name: homeLabel, exact: true });
     await expect(home).toHaveAttribute("href", homePath);
+    // The server-rendered link is visible before the client router can use it.
+    await expect(page.locator("next-route-announcer")).toBeAttached();
     await home.click();
     await expect(page).toHaveURL(new RegExp(`${homePath}$`));
     await expect(page.locator("html")).toHaveAttribute("lang", locale);
