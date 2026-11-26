@@ -1,6 +1,6 @@
 ## 背景
 
-博客的 robots、sitemap、公开 tRPC 调用与 Serwist worker 都由 `(blog)` 页面消费或只生成博客 URL。站点专属实现归 `(blog)` 所有；公开页面不再增加聚合查询/缓存层，而是在实际路由或组件中直接调用 server caller。Next route group 不进入 URL，因此框架识别的根 metadata 路由可在 `(blog)` 内归组并保持现有 URL；不过 route group 也不会提供 URL 命名空间。
+博客的 robots、sitemap、公开 tRPC 调用与 Serwist worker 都由 `(blog)` 页面消费或只生成博客 URL。站点专属数据实现归 `(blog)` 所有；公开页面不再增加聚合查询/缓存层，而是在实际路由或组件中直接调用 server caller。Next 官方 robots 文件约定要求 `robots.ts` 位于 `app` 根目录；放在 route group 时 Next 不会将其识别为根 robots metadata 路由。因此 `src/app/robots.ts` 保持为入口，sitemap 与 Serwist 实现仍归博客路由组。route group 也不会提供 URL 命名空间。
 
 ## 目标 / 非目标
 
@@ -20,7 +20,7 @@
 
 ## 决策
 
-1. **框架 metadata 入口与站点实现一起归组。** 将 `robots.ts`、`sitemap.xml/route.ts`、`sitemaps/[id]/route.ts` 放入 `src/app/(blog)`。Next route group 不参与 URL，因此对外路径不变。未来同一 App Router 增加另一个站点且要求同一个根 URL 时，必须保留一个根路径所有者并按 host 分发，或拆为独立应用/部署；不得在另一个 route group 中重复相同 URL。
+1. **metadata 入口按文件约定语义归属。** `robots.ts` 保持在 `src/app` 根目录，符合 Next 官方 robots 文件约定并注册固定 `/robots.txt`；route group 中的 `robots.ts` 不会被识别为该根 metadata 路由。`sitemap.xml/route.ts` 和 `sitemaps/[id]/route.ts` 保留在 `(blog)`，其公开 URL 保持不变。未来同一 App Router 增加另一个站点且要求同一个根 URL 时，必须保留一个根路径所有者并按 host 分发，或拆为独立应用/部署；不得在另一个 route group 中重复相同 URL。
 2. **非框架发现的 worker 跟随站点归属。** 将 `src/app/pwa` 整体迁至 `src/app/(blog)/pwa`，并更新 `scripts/build-serwist.ts` 的显式入口。构建产物仍为 `public/serwist/sw.js`，BlogProviders 的注册 URL 与 `/` scope 保持不变。
 3. **测试与门禁同步迁移。** sitemap 单测、robots 单测和 PWA 就近测试随实现移动；集成测试继续调用同一公开 handler。更新 lint 变更分类、精确覆盖率路径、server-only/路径契约和测试指南，不扩大覆盖率排除。
 4. **保留当前数据与副作用链。** sitemap 仍通过原有延迟导入查询公开文章、页面和菜单分类；worker 仍使用现有预缓存与运行时缓存策略。迁移只改路径和消费者。

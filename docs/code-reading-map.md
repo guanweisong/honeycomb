@@ -107,4 +107,4 @@ server 函数直接访问数据库，不额外创建只转发参数的工厂或�
 
 ## 博客站点运行时
 
-根 metadata 请求由 `src/app/(blog)/robots.ts`、`sitemap.xml/route.ts` 和 `sitemaps/[id]/route.ts` 处理，URL 不包含 `(blog)`；sitemap 查询与序列化位于 `(blog)/lib/server/sitemap-data.ts`。Serwist 由 `scripts/build-serwist.ts` 显式从 `(blog)/pwa/sw.ts` 构建到 `/serwist/sw.js`，博客 Provider 在根 scope 注册它。
+根 metadata 请求由 `src/app/robots.ts`、`(blog)/sitemap.xml/route.ts` 和 `(blog)/sitemaps/[id]/route.ts` 处理。Next 的 robots 文件约定要求入口位于 App 根目录；sitemap 查询与序列化位于 `(blog)/lib/server/sitemap-data.ts`。Serwist 由 `scripts/build-serwist.ts` 显式从 `(blog)/pwa/sw.ts` 构建到 `/serwist/sw.js`，博客 Provider 在根 scope 注册它。

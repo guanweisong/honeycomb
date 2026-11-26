@@ -19,7 +19,7 @@ const SITEMAP_CACHE_REVALIDATE_SECONDS = 300;
 
 type SitemapUrl = {
   url: string;
-  lastModified?: Date;
+  lastModified?: string;
   changeFrequency: "daily" | "weekly" | "monthly";
   priority: number;
 };
@@ -40,7 +40,7 @@ function localizeSitemapUrl(
 }
 
 export function getStaticSitemapUrls(baseUrl: string): SitemapUrl[] {
-  const lastModified = new Date();
+  const lastModified = new Date().toISOString();
 
   return [
     {
@@ -89,21 +89,21 @@ export const getCachedSitemapShard = unstable_cache(
     const dynamicUrls: SitemapUrl[] = [
       ...categoryHrefs.flatMap((href) =>
         localizeSitemapUrl(baseUrl, href, {
-          lastModified: new Date(),
+          lastModified: new Date().toISOString(),
           changeFrequency: "weekly",
           priority: 0.8,
         }),
       ),
       ...posts.flatMap(({ id, updatedAt }) =>
         localizeSitemapUrl(baseUrl, `/archives/${id}`, {
-          lastModified: new Date(updatedAt ?? Date.now()),
+          lastModified: new Date(updatedAt ?? Date.now()).toISOString(),
           changeFrequency: "weekly",
           priority: 0.7,
         }),
       ),
       ...pages.flatMap(({ id, updatedAt }) =>
         localizeSitemapUrl(baseUrl, `/pages/${id}`, {
-          lastModified: new Date(updatedAt ?? Date.now()),
+          lastModified: new Date(updatedAt ?? Date.now()).toISOString(),
           changeFrequency: "monthly",
           priority: 0.6,
         }),
@@ -173,7 +173,7 @@ export function toSitemapXml(urls: SitemapUrl[]) {
       ({ url, lastModified, changeFrequency, priority }) =>
         `\n  <url>\n    <loc>${escapeXml(url)}</loc>${
           lastModified
-            ? `\n    <lastmod>${lastModified.toISOString()}</lastmod>`
+            ? `\n    <lastmod>${lastModified}</lastmod>`
             : ""
         }\n    <changefreq>${changeFrequency}</changefreq>\n    <priority>${priority}</priority>\n  </url>`,
     )

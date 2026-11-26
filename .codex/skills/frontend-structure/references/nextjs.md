@@ -11,4 +11,4 @@
 - 涉及框架与业务组合时，读取[架构规则索引](architecture.md)，不在此重述依赖规则。
 - 本轮路由迁移保留客户端导航/历史替换时序：post/page 根入口仍使用 `useLayoutEffect` / `router.replace`；`app/admin/(dashboard)` 的认证 layout/template 不随无职责 `(root)` 的移除而删除。具体迁移决策见[当前 design](../../../../openspec/changes/refine-directory-ownership/design.md)。
 
-- 站点专属的 metadata 路由、数据实现及非框架发现的 worker 源码归所属站点路由组，例如博客的 `app/(blog)/robots.ts`、`app/(blog)/lib/server/sitemap-data.ts` 和 `app/(blog)/pwa`。博客页面直接使用 `app/trpc/server.ts` 的 server caller；不为公开查询建立集中式框架缓存包装。显式 worker 构建入口由 `scripts/build-serwist.ts` 维护；route group 不进入 URL。同一 App Router 的根 metadata URL 只有一个路由所有者，多个站点共用时必须采用唯一 host 分发入口或独立应用/部署。移动源码时同步构建入口、精确覆盖率路径及服务端门禁，公开 URL 不变。
+- 站点专属的 metadata 数据实现及非框架发现的 worker 源码归所属站点路由组，例如博客的 `app/(blog)/lib/server/sitemap-data.ts` 和 `app/(blog)/pwa`。Next 的 robots 文件约定要求 `robots.ts` 位于 `app` 根目录；放进 route group 不会注册固定 `/robots.txt`。入口可以保留简短策略，也可以委托给站点实现。博客页面直接使用 `app/trpc/server.ts` 的 server caller；不为公开查询建立集中式框架缓存包装。显式 worker 构建入口由 `scripts/build-serwist.ts` 维护。同一 App Router 的根 metadata URL 只有一个路由所有者，多个站点共用时必须采用唯一 host 分发入口或独立应用/部署。移动源码时同步构建入口、精确覆盖率路径及服务端门禁，公开 URL 不变。
