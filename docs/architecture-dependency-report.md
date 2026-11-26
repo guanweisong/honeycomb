@@ -44,7 +44,7 @@ app、features、components、lib 的区别是框架组合、业务、通用交�
 
 ## 站点运行时归属
 
-站点专属的框架 metadata 路由、生成数据和非框架发现的 worker 源码归对应站点路由组。例如博客的 robots、sitemap 与 Serwist 源码位于 `src/app/(blog)`；route group 不进入 URL。Next 的根 metadata URL 在同一 App Router 中仍只能有一个所有者；多个站点需要共用时，使用唯一的 host 分发入口或独立应用/部署。规范见[源码架构主规格](../openspec/specs/package-layer-architecture/spec.md#requirement-站点专属运行时入口归所属路由组)。
+站点专属的数据实现和非框架发现的 worker 源码归对应站点路由组。Next 官方 robots 文件约定要求 `robots.ts` 位于 `app` 根目录；放在 `(blog)` 时不会注册为 `/robots.txt`。因此博客的 `src/app/robots.ts` 保持为根 metadata 入口，sitemap 与 Serwist 实现位于 `src/app/(blog)`。同一 App Router 中每个根 metadata URL 仍只能有一个所有者；多个站点需要共用时，使用唯一的 host 分发入口或独立应用/部署。规范见[源码架构主规格](../openspec/specs/package-layer-architecture/spec.md#requirement-站点专属运行时实现归属其站点)。
 
 ## 用行为证明精简安全
 

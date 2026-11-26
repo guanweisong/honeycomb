@@ -305,7 +305,7 @@ export async function getPublishedPostCategoryId(db: Database, id: string) {
         ),
       ),
   );
-  return result ? { categoryId: result.categoryId ?? undefined } : result;
+  return result ? { categoryId: result.categoryId ?? undefined } : null;
 }
 
 /** Sitemap owns a published-only projection; no body, author or media hydration. */

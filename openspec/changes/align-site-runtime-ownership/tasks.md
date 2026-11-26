@@ -1,6 +1,6 @@
 ## 1. 站点实现迁移
 
-- [x] 1.1 将 robots、sitemap 路由与数据实现、PWA 源码和就近测试迁入 `(blog)`，保持 URL 与行为不变。
+- [x] 1.1 将 sitemap 路由与数据实现、PWA 源码和就近测试迁入 `(blog)`；保持固定 `/robots.txt` 所需的 metadata 入口位于 App 根目录。
 - [x] 1.2 更新构建脚本、集成测试和所有显式导入路径。
 - [x] 1.3 将博客公开查询模块与测试迁入 `(blog)`，后台登录改为直接调用公开 tRPC server caller。
 - [x] 1.4 删除博客公开查询聚合层，在各路由/组件直接调用 tRPC server caller，并让随机快照值只在请求时生成。

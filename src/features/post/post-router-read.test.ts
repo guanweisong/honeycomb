@@ -254,7 +254,7 @@ describe("Post Router", () => {
       );
     });
 
-    it("should return undefined for non-existent post", async () => {
+    it("should return null for non-existent post (a valid query result)", async () => {
       // 设置不存在文章分类 ID 的模拟查询调用链。
       mockDb.select.mockReturnValueOnce(mockDb);
       mockDb.from.mockReturnValueOnce(mockDb);
@@ -266,7 +266,7 @@ describe("Post Router", () => {
         id: TEST_IDS.ID_NOT_FOUND,
       });
 
-      expect(result).toBeUndefined();
+      expect(result).toBeNull();
     });
   });
 

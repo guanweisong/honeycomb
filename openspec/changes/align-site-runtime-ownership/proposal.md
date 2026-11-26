@@ -4,7 +4,7 @@
 
 ## 变更内容
 
-- 将 robots、sitemap 入口及生成实现、PWA worker 源码与策略移入 `(blog)` 路由组，保持公开 URL、缓存和离线行为不变。
+- 将 sitemap 入口及生成实现、PWA worker 源码与策略移入 `(blog)` 路由组；按 Next robots 文件约定将 `robots.ts` 保留在 App 根目录，保持公开 URL、缓存和离线行为不变。
 - 移除博客 `public-queries.ts` 聚合层；博客路由和组件直接调用 tRPC server caller。后台登录继续直接调用公开设置 procedure。
 - 更新 Serwist 构建入口、测试导入、覆盖率/架构门禁及当前工程约定。
 - 明确 route group 不创建 URL 命名空间；同一应用的多个站点共用根 metadata URL 时必须由单一入口按 host 分发，或使用独立应用/部署。

@@ -67,4 +67,19 @@ describe("runtime sitemap", () => {
       "https://example.com/&lt;root&gt;?a=1&amp;b=&apos;x&apos;&quot;/sitemaps/0.xml",
     );
   });
+
+  it("serializes ISO timestamps restored from the Next cache", () => {
+    const sitemap = toSitemapXml([
+      {
+        url: "https://example.com/post",
+        lastModified: "2026-11-26T12:00:00.000Z",
+        changeFrequency: "weekly",
+        priority: 0.7,
+      },
+    ]);
+
+    expect(sitemap).toContain(
+      "<lastmod>2026-11-26T12:00:00.000Z</lastmod>",
+    );
+  });
 });

@@ -292,7 +292,7 @@ describe("runtime sitemap", () => {
 
     expect(persistedUrls).toHaveLength(4);
     for (const entry of persistedUrls) {
-      expect(entry.lastModified?.getTime()).toBe(now);
+      expect(Date.parse(entry.lastModified ?? "")).toBe(now);
     }
   });
 
